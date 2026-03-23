@@ -1,0 +1,259 @@
+"use client";
+
+import React, { useRef } from "react";
+import { useStandStore } from "@/lib/store";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import {
+  Undo2,
+  Redo2,
+  Grid3X3,
+  Type,
+  Trash2,
+  Download,
+  Upload,
+  FileJson,
+  Image as ImageIcon,
+  History,
+  Share2,
+} from "lucide-react";
+import { GridSize } from "@/lib/types";
+
+interface ToolbarProps {
+  onShareOpen: () => void;
+}
+
+export function Toolbar({ onShareOpen }: ToolbarProps) {
+  const {
+    undo,
+    redo,
+    historyIndex,
+    history,
+    showGrid,
+    toggleGrid,
+    gridSize,
+    setGridSize,
+    elements,
+    clearElements,
+    planName,
+    setPlanName,
+    planId,
+    addTextElement,
+    dimensions,
+  } = useStandStore();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const canUndo = historyIndex >= 0;
+  const canRedo = historyIndex < history.length - 1;
+
+  const handleExportJSON = () => {
+    const data = {
+      planName,
+      planId,
+      dimensions: useStandStore.getState().dimensions,
+      elements: useStandStore.getState().elements,
+      exportedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${planName.replace(/\s+/g, "_")}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target?.result as string);
+        if (data.dimensions) {
+          useStandStore.getState().setDimensions(data.dimensions);
+        }
+        if (data.elements && Array.isArray(data.elements)) {
+          useStandStore.setState({ elements: data.elements });
+        }
+        if (data.planName) {
+          useStandStore.getState().setPlanName(data.planName);
+        }
+      } catch {
+        alert("Fichier JSON invalide");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
+  const handleExportSVG = () => {
+    const state = useStandStore.getState();
+    const w = state.dimensions.width * 100;
+    const h = state.dimensions.depth * 100;
+
+    let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+    svgContent += `<rect width="${w}" height="${h}" fill="white" stroke="#ccc" stroke-width="1"/>`;
+
+    for (const el of state.elements) {
+      const ex = el.x * 100;
+      const ey = el.y * 100;
+      const ew = el.width * 100;
+      const eh = el.height * 100;
+
+      if (el.category === "texte") {
+        svgContent += `<text x="${ex + ew / 2}" y="${ey + eh / 2}" text-anchor="middle" dominant-baseline="middle" fill="${el.color}" font-size="${el.fontSize ?? 18}" ${el.fontBold ? 'font-weight="bold"' : ""} ${el.fontItalic ? 'font-style="italic"' : ""} transform="rotate(${el.rotation} ${ex + ew / 2} ${ey + eh / 2})">${el.text ?? ""}</text>`;
+      } else {
+        svgContent += `<g transform="rotate(${el.rotation} ${ex + ew / 2} ${ey + eh / 2})">`;
+        svgContent += `<rect x="${ex}" y="${ey}" width="${ew}" height="${eh}" fill="${el.color}" rx="3"/>`;
+        svgContent += `<text x="${ex + ew / 2}" y="${ey + eh / 2 - 4}" text-anchor="middle" dominant-baseline="middle" fill="white" font-size="10">${el.name}</text>`;
+        svgContent += `<text x="${ex + ew / 2}" y="${ey + eh / 2 + 8}" text-anchor="middle" dominant-baseline="middle" fill="white" font-size="8" opacity="0.7">${el.width}×${el.height}m</text>`;
+        svgContent += `</g>`;
+      }
+    }
+
+    svgContent += `</svg>`;
+
+    const blob = new Blob([svgContent], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${planName.replace(/\s+/g, "_")}.svg`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleAddText = () => {
+    addTextElement(dimensions.width / 2 - 0.5, dimensions.depth / 2 - 0.2);
+  };
+
+  const gridSizes: GridSize[] = [5, 10, 20];
+
+  return (
+    <div className="h-11 border-b border-[#e5e7eb] bg-white flex items-center px-3 gap-1.5 shrink-0">
+      {/* Plan name */}
+      <div className="flex items-center gap-2 mr-1">
+        <input
+          value={planName}
+          onChange={(e) => setPlanName(e.target.value)}
+          className="text-[13px] font-semibold text-[#1e293b] bg-transparent border-none outline-none w-28 hover:bg-[#f1f5f9] px-1.5 py-1 rounded-md transition-colors"
+        />
+        <span className="text-[10px] text-[#94a3b8] font-mono hidden xl:inline">
+          {planId}
+        </span>
+      </div>
+
+      <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
+
+      {/* Undo / Redo */}
+      <Button variant="ghost" size="icon" className="h-7 w-7 text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" disabled={!canUndo} onClick={undo} title="Annuler">
+        <Undo2 className="h-3.5 w-3.5" />
+      </Button>
+      <Button variant="ghost" size="icon" className="h-7 w-7 text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" disabled={!canRedo} onClick={redo} title="Rétablir">
+        <Redo2 className="h-3.5 w-3.5" />
+      </Button>
+
+      <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
+
+      {/* Grid toggle */}
+      <Button
+        variant={showGrid ? "secondary" : "ghost"}
+        size="icon"
+        className={`h-7 w-7 ${showGrid ? "bg-[#f1f5f9] text-[#1e293b]" : "text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]"}`}
+        onClick={toggleGrid}
+        title="Grille"
+      >
+        <Grid3X3 className="h-3.5 w-3.5" />
+      </Button>
+
+      {/* Grid size selector */}
+      <div className="flex items-center gap-0.5 mx-0.5">
+        {gridSizes.map((s) => (
+          <button
+            key={s}
+            className={`h-6 px-2 text-[10px] font-medium rounded-md transition-colors ${
+              gridSize === s
+                ? "bg-[#1e293b] text-white"
+                : "text-[#64748b] hover:bg-[#f1f5f9] hover:text-[#334155]"
+            }`}
+            onClick={() => setGridSize(s)}
+          >
+            {s} cm
+          </button>
+        ))}
+      </div>
+
+      <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
+
+      {/* Text tool */}
+      <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[11px] font-medium text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" onClick={handleAddText} title="Ajouter un texte">
+        <Type className="h-3.5 w-3.5" />
+        Texte
+      </Button>
+
+      {/* Clear */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-7 gap-1.5 text-[11px] font-medium text-[#ef4444] hover:text-[#dc2626] hover:bg-red-50"
+        onClick={() => { if (confirm("Effacer tous les éléments ?")) clearElements(); }}
+        title="Tout effacer"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+        Effacer
+      </Button>
+
+      <div className="flex-1" />
+
+      {/* Element count */}
+      <span className="text-[11px] text-[#94a3b8] font-medium mr-1">
+        {elements.length} élément{elements.length !== 1 ? "s" : ""}
+      </span>
+
+      <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
+
+      {/* Import */}
+      <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleImportJSON} />
+      <Button variant="ghost" size="icon" className="h-7 w-7 text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" onClick={() => fileInputRef.current?.click()} title="Importer">
+        <Upload className="h-3.5 w-3.5" />
+      </Button>
+
+      {/* Export SVG */}
+      <Button variant="ghost" size="icon" className="h-7 w-7 text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" onClick={handleExportSVG} title="SVG">
+        <ImageIcon className="h-3.5 w-3.5" />
+      </Button>
+
+      {/* Export JSON */}
+      <Button variant="ghost" size="icon" className="h-7 w-7 text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" onClick={handleExportJSON} title="JSON">
+        <FileJson className="h-3.5 w-3.5" />
+      </Button>
+
+      <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
+
+      {/* History */}
+      <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[11px] font-medium text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" title="Historique">
+        <History className="h-3.5 w-3.5" />
+        Historique
+      </Button>
+
+      {/* Save */}
+      <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[11px] font-medium text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" onClick={handleExportJSON} title="Sauvegarder">
+        <Download className="h-3.5 w-3.5" />
+        Sauvegarder
+      </Button>
+
+      {/* Share */}
+      <Button
+        size="sm"
+        className="h-7 gap-1.5 text-[11px] font-semibold bg-[#10b981] hover:bg-[#059669] text-white rounded-lg shadow-sm ml-1"
+        onClick={onShareOpen}
+      >
+        <Share2 className="h-3.5 w-3.5" />
+        Partager
+      </Button>
+    </div>
+  );
+}

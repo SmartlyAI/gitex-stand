@@ -39,6 +39,22 @@ export interface StandDimensions {
   depth: number; // in meters
 }
 
+export interface HistoryEntry {
+  elements: StandElement[];
+  dimensions: StandDimensions;
+}
+
+export interface StandPlan {
+  planId: string;
+  planName: string;
+  dimensions: StandDimensions;
+  elements: StandElement[];
+  history: HistoryEntry[];
+  historyIndex: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export type StandPreset = "6x5" | "6x6" | "6x6b";
 
 export interface ShareSettings {

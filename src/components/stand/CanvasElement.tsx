@@ -8,6 +8,7 @@ interface CanvasElementProps {
   scale: number;
   metersToPx: number;
   isSelected: boolean;
+  isReadOnly: boolean;
   onSelect: () => void;
   onDragEnd: (id: string, newX: number, newY: number) => void;
   snapToGrid: (val: number) => number;
@@ -20,6 +21,7 @@ export function CanvasElement({
   scale,
   metersToPx,
   isSelected,
+  isReadOnly,
   onSelect,
   onDragEnd,
   snapToGrid,
@@ -38,7 +40,7 @@ export function CanvasElement({
   const top = baseTop + (dragOffset?.dy ?? 0);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (element.locked) return;
+    if (element.locked || isReadOnly) return;
     e.stopPropagation();
     e.preventDefault();
     onSelect();
@@ -87,7 +89,9 @@ export function CanvasElement({
       className={`absolute flex items-center justify-center select-none overflow-hidden ${
         isSelected ? "ring-2 ring-blue-500" : ""
       } ${isDragging ? "shadow-lg z-50 opacity-90" : "z-10"} ${
-        element.locked ? "cursor-not-allowed opacity-80" : "cursor-move"
+        element.locked || isReadOnly
+          ? "cursor-not-allowed opacity-80"
+          : "cursor-move"
       }`}
       style={{
         left,
@@ -131,7 +135,7 @@ export function CanvasElement({
         </span>
       )}
 
-      {isSelected && !element.locked && (
+      {isSelected && !element.locked && !isReadOnly && (
         <div className="absolute bottom-0 right-0 w-3 h-3 bg-blue-500 cursor-se-resize rounded-tl-sm" />
       )}
     </div>

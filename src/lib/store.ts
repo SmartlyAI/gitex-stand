@@ -1,11 +1,13 @@
 import { create } from "zustand";
 import { nanoid } from "nanoid";
-import { StandElement, StandDimensions, GridSize, FurnitureCatalogItem } from "./types";
-
-interface HistoryEntry {
-  elements: StandElement[];
-  dimensions: StandDimensions;
-}
+import {
+  StandElement,
+  StandDimensions,
+  GridSize,
+  FurnitureCatalogItem,
+  HistoryEntry,
+  StandPlan,
+} from "./types";
 
 interface StandStore {
   // Stand dimensions
@@ -39,9 +41,14 @@ interface StandStore {
   redo: () => void;
 
   // Share
+  isReadOnly: boolean;
+  setReadOnly: (value: boolean) => void;
   planId: string;
+  setPlanId: (planId: string) => void;
   planName: string;
   setPlanName: (name: string) => void;
+  replacePlan: (plan: StandPlan) => void;
+  serializePlan: () => StandPlan;
 }
 
 const DEFAULT_DIMENSIONS: StandDimensions = { width: 6, depth: 5 };
@@ -49,6 +56,7 @@ const DEFAULT_DIMENSIONS: StandDimensions = { width: 6, depth: 5 };
 export const useStandStore = create<StandStore>((set, get) => ({
   dimensions: { ...DEFAULT_DIMENSIONS },
   setDimensions: (d) => {
+    if (get().isReadOnly) return;
     get().pushHistory();
     set({ dimensions: d });
   },
@@ -58,6 +66,7 @@ export const useStandStore = create<StandStore>((set, get) => ({
   selectElement: (id) => set({ selectedElementId: id }),
 
   addElement: (item, x, y) => {
+    if (get().isReadOnly) return;
     get().pushHistory();
     const { dimensions } = get();
     const el: StandElement = {
@@ -80,6 +89,7 @@ export const useStandStore = create<StandStore>((set, get) => ({
   },
 
   addTextElement: (x, y) => {
+    if (get().isReadOnly) return;
     get().pushHistory();
     const el: StandElement = {
       id: nanoid(8),
@@ -105,6 +115,7 @@ export const useStandStore = create<StandStore>((set, get) => ({
   },
 
   updateElement: (id, updates) => {
+    if (get().isReadOnly) return;
     get().pushHistory();
     set((s) => ({
       elements: s.elements.map((e) =>
@@ -114,6 +125,7 @@ export const useStandStore = create<StandStore>((set, get) => ({
   },
 
   moveElement: (id, x, y) => {
+    if (get().isReadOnly) return;
     set((s) => ({
       elements: s.elements.map((e) =>
         e.id === id ? { ...e, x, y } : e
@@ -122,6 +134,7 @@ export const useStandStore = create<StandStore>((set, get) => ({
   },
 
   removeElement: (id) => {
+    if (get().isReadOnly) return;
     get().pushHistory();
     set((s) => ({
       elements: s.elements.filter((e) => e.id !== id),
@@ -131,6 +144,7 @@ export const useStandStore = create<StandStore>((set, get) => ({
   },
 
   duplicateElement: (id) => {
+    if (get().isReadOnly) return;
     const el = get().elements.find((e) => e.id === id);
     if (!el) return;
     get().pushHistory();
@@ -148,6 +162,7 @@ export const useStandStore = create<StandStore>((set, get) => ({
   },
 
   clearElements: () => {
+    if (get().isReadOnly) return;
     get().pushHistory();
     set({ elements: [], selectedElementId: null });
   },
@@ -160,6 +175,7 @@ export const useStandStore = create<StandStore>((set, get) => ({
   history: [],
   historyIndex: -1,
   pushHistory: () => {
+    if (get().isReadOnly) return;
     const { elements, dimensions, history, historyIndex } = get();
     const entry: HistoryEntry = {
       elements: JSON.parse(JSON.stringify(elements)),
@@ -173,6 +189,7 @@ export const useStandStore = create<StandStore>((set, get) => ({
   },
 
   undo: () => {
+    if (get().isReadOnly) return;
     const { historyIndex, history } = get();
     if (historyIndex < 0) return;
     const entry = history[historyIndex];
@@ -185,6 +202,7 @@ export const useStandStore = create<StandStore>((set, get) => ({
   },
 
   redo: () => {
+    if (get().isReadOnly) return;
     const { historyIndex, history } = get();
     if (historyIndex >= history.length - 1) return;
     const entry = history[historyIndex + 1];
@@ -196,9 +214,43 @@ export const useStandStore = create<StandStore>((set, get) => ({
     });
   },
 
+  isReadOnly: false,
+  setReadOnly: (value) => set({ isReadOnly: value }),
   planId: "",
+  setPlanId: (planId) => set({ planId }),
   planName: "Plan de Stand",
-  setPlanName: (name) => set({ planName: name }),
+  setPlanName: (name) => {
+    if (get().isReadOnly) return;
+    set({ planName: name });
+  },
+
+  replacePlan: (plan) => {
+    set({
+      planId: plan.planId,
+      planName: plan.planName,
+      dimensions: { ...plan.dimensions },
+      elements: JSON.parse(JSON.stringify(plan.elements)),
+      history: JSON.parse(JSON.stringify(plan.history ?? [])),
+      historyIndex:
+        typeof plan.historyIndex === "number"
+          ? plan.historyIndex
+          : (plan.history?.length ?? 0) - 1,
+      selectedElementId: null,
+    });
+  },
+
+  serializePlan: () => {
+    const { planId, planName, dimensions, elements, history, historyIndex } = get();
+
+    return {
+      planId,
+      planName,
+      dimensions: { ...dimensions },
+      elements: JSON.parse(JSON.stringify(elements)),
+      history: JSON.parse(JSON.stringify(history)),
+      historyIndex,
+    };
+  },
 }));
 
 // Initialize planId on client side only

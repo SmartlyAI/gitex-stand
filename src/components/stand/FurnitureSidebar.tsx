@@ -5,7 +5,6 @@ import { catalog } from "@/lib/catalog";
 import { FurnitureCatalogItem } from "@/lib/types";
 import { useStandStore } from "@/lib/store";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ChevronDown,
   ChevronRight,
@@ -17,6 +16,7 @@ export function FurnitureSidebar() {
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const addElement = useStandStore((s) => s.addElement);
+  const isReadOnly = useStandStore((s) => s.isReadOnly);
 
   const toggleCategory = (id: string) => {
     setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -40,7 +40,7 @@ export function FurnitureSidebar() {
     .filter((cat) => cat.items.length > 0);
 
   return (
-    <div className="w-60 border-r border-[#e5e7eb] bg-white flex flex-col h-full">
+    <div className="w-60 min-h-0 border-r border-[#e5e7eb] bg-white flex flex-col h-full">
       <div className="px-4 pt-4 pb-3 border-b border-[#e5e7eb]">
         <h2 className="font-semibold text-[13px] text-[#1e293b] mb-2.5">Mobilier</h2>
         <div className="relative">
@@ -54,8 +54,7 @@ export function FurnitureSidebar() {
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="px-3 py-2">
+      <div className="flex-1 min-h-0 overflow-y-auto px-3 py-2">
           {filteredCatalog.map((cat) => (
             <div key={cat.id} className="mb-0.5">
               <button
@@ -75,10 +74,18 @@ export function FurnitureSidebar() {
                   {cat.items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-[#f1f5f9] cursor-grab active:cursor-grabbing group transition-colors"
-                      draggable
+                      className={`flex items-center gap-2.5 px-2 py-2 rounded-lg group transition-colors ${
+                        isReadOnly
+                          ? "opacity-60 cursor-not-allowed"
+                          : "hover:bg-[#f1f5f9] cursor-grab active:cursor-grabbing"
+                      }`}
+                      draggable={!isReadOnly}
                       onDragStart={(e) => handleDragStart(e, item)}
-                      onDoubleClick={() => addElement(item)}
+                      onDoubleClick={() => {
+                        if (!isReadOnly) {
+                          addElement(item);
+                        }
+                      }}
                     >
                       <GripVertical className="h-3.5 w-3.5 text-[#cbd5e1] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                       <div
@@ -99,8 +106,7 @@ export function FurnitureSidebar() {
               )}
             </div>
           ))}
-        </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import { StandEditor } from "@/components/stand/StandEditor";
+import { ProjectLauncher } from "@/components/projects/ProjectLauncher";
 
 export default function Home() {
-  return <StandEditor />;
+  return <ProjectLauncher />;
 }

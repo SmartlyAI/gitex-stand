@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { useStandStore } from "@/lib/store";
+import { savePlanToApi } from "@/lib/plan-client";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -10,11 +11,11 @@ import {
   Grid3X3,
   Type,
   Trash2,
-  Download,
   Upload,
   FileJson,
   Image as ImageIcon,
   History,
+  Save,
   Share2,
 } from "lucide-react";
 import { GridSize } from "@/lib/types";
@@ -24,6 +25,7 @@ interface ToolbarProps {
 }
 
 export function Toolbar({ onShareOpen }: ToolbarProps) {
+  const [isSaving, setIsSaving] = useState(false);
   const {
     undo,
     redo,
@@ -40,12 +42,27 @@ export function Toolbar({ onShareOpen }: ToolbarProps) {
     planId,
     addTextElement,
     dimensions,
+    isReadOnly,
+    serializePlan,
   } = useStandStore();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const canUndo = historyIndex >= 0;
   const canRedo = historyIndex < history.length - 1;
+
+  const handleSavePlan = async () => {
+    if (isReadOnly || !planId) return;
+
+    try {
+      setIsSaving(true);
+      await savePlanToApi(serializePlan());
+    } catch {
+      alert("Impossible de sauvegarder le plan");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleExportJSON = () => {
     const data = {
@@ -139,6 +156,7 @@ export function Toolbar({ onShareOpen }: ToolbarProps) {
         <input
           value={planName}
           onChange={(e) => setPlanName(e.target.value)}
+          readOnly={isReadOnly}
           className="text-[13px] font-semibold text-[#1e293b] bg-transparent border-none outline-none w-28 hover:bg-[#f1f5f9] px-1.5 py-1 rounded-md transition-colors"
         />
         <span className="text-[10px] text-[#94a3b8] font-mono hidden xl:inline">
@@ -149,10 +167,10 @@ export function Toolbar({ onShareOpen }: ToolbarProps) {
       <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
 
       {/* Undo / Redo */}
-      <Button variant="ghost" size="icon" className="h-7 w-7 text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" disabled={!canUndo} onClick={undo} title="Annuler">
+      <Button variant="ghost" size="icon" className="h-7 w-7 text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" disabled={isReadOnly || !canUndo} onClick={undo} title="Annuler">
         <Undo2 className="h-3.5 w-3.5" />
       </Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7 text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" disabled={!canRedo} onClick={redo} title="Rétablir">
+      <Button variant="ghost" size="icon" className="h-7 w-7 text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" disabled={isReadOnly || !canRedo} onClick={redo} title="Rétablir">
         <Redo2 className="h-3.5 w-3.5" />
       </Button>
 
@@ -199,6 +217,7 @@ export function Toolbar({ onShareOpen }: ToolbarProps) {
         variant="ghost"
         size="sm"
         className="h-7 gap-1.5 text-[11px] font-medium text-[#ef4444] hover:text-[#dc2626] hover:bg-red-50"
+        disabled={isReadOnly}
         onClick={() => { if (confirm("Effacer tous les éléments ?")) clearElements(); }}
         title="Tout effacer"
       >
@@ -216,8 +235,8 @@ export function Toolbar({ onShareOpen }: ToolbarProps) {
       <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
 
       {/* Import */}
-      <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleImportJSON} />
-      <Button variant="ghost" size="icon" className="h-7 w-7 text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" onClick={() => fileInputRef.current?.click()} title="Importer">
+      <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleImportJSON} disabled={isReadOnly} />
+      <Button variant="ghost" size="icon" className="h-7 w-7 text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" onClick={() => fileInputRef.current?.click()} title="Importer" disabled={isReadOnly}>
         <Upload className="h-3.5 w-3.5" />
       </Button>
 
@@ -234,15 +253,15 @@ export function Toolbar({ onShareOpen }: ToolbarProps) {
       <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
 
       {/* History */}
-      <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[11px] font-medium text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" title="Historique">
+      <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[11px] font-medium text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" title="Historique" disabled>
         <History className="h-3.5 w-3.5" />
         Historique
       </Button>
 
       {/* Save */}
-      <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[11px] font-medium text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" onClick={handleExportJSON} title="Sauvegarder">
-        <Download className="h-3.5 w-3.5" />
-        Sauvegarder
+      <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[11px] font-medium text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" onClick={handleSavePlan} title="Sauvegarder" disabled={isReadOnly || isSaving}>
+        <Save className="h-3.5 w-3.5" />
+        {isSaving ? "Sauvegarde..." : "Sauvegarder"}
       </Button>
 
       {/* Share */}
@@ -250,6 +269,7 @@ export function Toolbar({ onShareOpen }: ToolbarProps) {
         size="sm"
         className="h-7 gap-1.5 text-[11px] font-semibold bg-[#10b981] hover:bg-[#059669] text-white rounded-lg shadow-sm ml-1"
         onClick={onShareOpen}
+        disabled={isReadOnly}
       >
         <Share2 className="h-3.5 w-3.5" />
         Partager

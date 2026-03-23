@@ -10,6 +10,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useStandStore } from "@/lib/store";
+import { savePlanToApi } from "@/lib/plan-client";
+import { buildPlanPath } from "@/lib/project-links";
 import { Eye, Pencil, Copy, Check } from "lucide-react";
 
 interface ShareModalProps {
@@ -18,20 +20,32 @@ interface ShareModalProps {
 }
 
 export function ShareModal({ open, onOpenChange }: ShareModalProps) {
-  const { planId } = useStandStore();
+  const { planId, isReadOnly, serializePlan } = useStandStore();
   const [mode, setMode] = useState<"readonly" | "editor">("readonly");
   const [copied, setCopied] = useState(false);
+  const [isPreparing, setIsPreparing] = useState(false);
 
   const shareUrl = useMemo(() => {
     const base =
       typeof window !== "undefined" ? window.location.origin : "";
-    return `${base}/plan/${planId}?mode=${mode}`;
+    return `${base}${buildPlanPath(planId, mode)}`;
   }, [planId, mode]);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (!planId) return;
+
+    try {
+      setIsPreparing(true);
+      if (!isReadOnly) {
+        await savePlanToApi(serializePlan());
+      }
+
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } finally {
+      setIsPreparing(false);
+    }
   };
 
   return (
@@ -72,6 +86,7 @@ export function ShareModal({ open, onOpenChange }: ShareModalProps) {
                 ? "border-emerald-500 bg-emerald-50"
                 : "border-border hover:border-muted-foreground/30"
             }`}
+            disabled={isReadOnly}
             onClick={() => setMode("editor")}
           >
             <div className="flex items-center gap-2 mb-1">
@@ -98,6 +113,7 @@ export function ShareModal({ open, onOpenChange }: ShareModalProps) {
               size="icon"
               className="h-9 w-9 shrink-0"
               onClick={handleCopy}
+              disabled={isPreparing || !planId}
             >
               {copied ? (
                 <Check className="h-4 w-4 text-emerald-500" />

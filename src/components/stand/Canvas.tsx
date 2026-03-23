@@ -13,6 +13,7 @@ export function Canvas() {
     elements,
     selectedElementId,
     selectElement,
+    isReadOnly,
     showGrid,
     gridSize,
   } = useStandStore();
@@ -53,6 +54,7 @@ export function Canvas() {
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
+      if (isReadOnly) return;
       e.preventDefault();
       const data = e.dataTransfer.getData("application/json");
       if (!data) return;
@@ -65,10 +67,11 @@ export function Canvas() {
       const sy = snapToGrid(Math.max(0, Math.min(y, dimensions.depth - item.height)));
       useStandStore.getState().addElement(item, sx, sy);
     },
-    [scale, snapToGrid, dimensions]
+    [scale, snapToGrid, dimensions, isReadOnly]
   );
 
   const handleDragOver = (e: React.DragEvent) => {
+    if (isReadOnly) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
   };
@@ -156,6 +159,7 @@ export function Canvas() {
                 scale={scale}
                 metersToPx={METERS_TO_PX}
                 isSelected={el.id === selectedElementId}
+                isReadOnly={isReadOnly}
                 onSelect={() => selectElement(el.id)}
                 onDragEnd={handleElementDragEnd}
                 snapToGrid={snapToGrid}

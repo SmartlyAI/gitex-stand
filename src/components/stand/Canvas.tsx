@@ -3,6 +3,7 @@
 import React, { useRef, useCallback, useState, useEffect } from "react";
 import { useStandStore } from "@/lib/store";
 import { CanvasElement } from "@/components/stand/CanvasElement";
+import { ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 
 const METERS_TO_PX = 100;
 const RULER_SIZE = 28;
@@ -13,6 +14,7 @@ export function Canvas() {
     elements,
     selectedElementId,
     selectElement,
+    removeElement,
     isReadOnly,
     showGrid,
     gridSize,
@@ -20,7 +22,9 @@ export function Canvas() {
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const [fitScale, setFitScale] = useState(1);
   const [scale, setScale] = useState(1);
+  const [hasManualZoom, setHasManualZoom] = useState(false);
 
   const canvasW = dimensions.width * METERS_TO_PX;
   const canvasH = dimensions.depth * METERS_TO_PX;
@@ -31,12 +35,41 @@ export function Canvas() {
       const rect = wrapperRef.current.getBoundingClientRect();
       const availW = rect.width - RULER_SIZE - 48;
       const availH = rect.height - RULER_SIZE - 64;
-      setScale(Math.min(availW / canvasW, availH / canvasH, 1.4));
+      const nextFitScale = Math.min(availW / canvasW, availH / canvasH, 1.4);
+      setFitScale(nextFitScale);
+      if (!hasManualZoom) {
+        setScale(nextFitScale);
+      }
     };
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
-  }, [canvasW, canvasH]);
+  }, [canvasW, canvasH, hasManualZoom]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isReadOnly || !selectedElementId || event.key !== "Delete") {
+        return;
+      }
+
+      const target = event.target as HTMLElement | null;
+      const tagName = target?.tagName;
+      if (
+        target?.isContentEditable ||
+        tagName === "INPUT" ||
+        tagName === "TEXTAREA" ||
+        tagName === "SELECT"
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      removeElement(selectedElementId);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isReadOnly, removeElement, selectedElementId]);
 
   const gridSizePx = (gridSize / 100) * METERS_TO_PX;
 
@@ -88,8 +121,49 @@ export function Canvas() {
   const scaledH = canvasH * scale;
   const mPx = METERS_TO_PX * scale;
 
+  const handleZoomIn = () => {
+    setHasManualZoom(true);
+    setScale((currentScale) => Math.min(currentScale + 0.1, 2.5));
+  };
+
+  const handleZoomOut = () => {
+    setHasManualZoom(true);
+    setScale((currentScale) => Math.max(currentScale - 0.1, 0.35));
+  };
+
+  const handleZoomReset = () => {
+    setHasManualZoom(false);
+    setScale(fitScale);
+  };
+
   return (
     <div ref={wrapperRef} className="flex-1 overflow-auto flex flex-col items-center justify-center bg-[#f4f5f7] relative">
+      <div className="absolute right-4 top-4 z-20 flex items-center gap-1 rounded-xl border border-[#e2e8f0] bg-white/95 px-2 py-2 shadow-sm backdrop-blur-sm">
+        <button
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-[#475569] transition-colors hover:bg-[#f1f5f9] hover:text-[#1e293b]"
+          onClick={handleZoomOut}
+          type="button"
+        >
+          <ZoomOut className="h-4 w-4" />
+        </button>
+        <div className="min-w-[52px] text-center text-[11px] font-semibold text-[#334155]">
+          {Math.round(scale * 100)}%
+        </div>
+        <button
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-[#475569] transition-colors hover:bg-[#f1f5f9] hover:text-[#1e293b]"
+          onClick={handleZoomIn}
+          type="button"
+        >
+          <ZoomIn className="h-4 w-4" />
+        </button>
+        <button
+          className="ml-1 flex h-8 w-8 items-center justify-center rounded-lg text-[#475569] transition-colors hover:bg-[#f1f5f9] hover:text-[#1e293b]"
+          onClick={handleZoomReset}
+          type="button"
+        >
+          <Maximize2 className="h-4 w-4" />
+        </button>
+      </div>
       <div className="flex flex-col items-start">
         {/* Top ruler */}
         <div className="flex" style={{ height: RULER_SIZE }}>

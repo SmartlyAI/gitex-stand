@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { nanoid } from "nanoid";
+import { measureTextContent } from "./text-measure";
 import {
   StandElement,
   StandDimensions,
@@ -91,6 +92,11 @@ export const useStandStore = create<StandStore>((set, get) => ({
   addTextElement: (x, y) => {
     if (get().isReadOnly) return;
     get().pushHistory();
+    const defaultText = "Texte";
+    const textSize = measureTextContent({
+      text: defaultText,
+      fontSize: 18 * 0.8,
+    });
     const el: StandElement = {
       id: nanoid(8),
       catalogId: "text",
@@ -98,12 +104,12 @@ export const useStandStore = create<StandStore>((set, get) => ({
       category: "texte",
       x,
       y,
-      width: 1,
-      height: 0.4,
+      width: textSize.widthPx / 100,
+      height: textSize.heightPx / 100,
       rotation: 0,
       color: "#1a1a2e",
       locked: false,
-      text: "Texte",
+      text: defaultText,
       fontSize: 18,
       fontBold: false,
       fontItalic: false,

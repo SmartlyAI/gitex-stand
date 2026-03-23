@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useStandStore } from "@/lib/store";
+import { measureTextContent } from "@/lib/text-measure";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -32,6 +33,39 @@ export function PropertiesPanel() {
   } = useStandStore();
 
   const selectedElement = elements.find((e) => e.id === selectedElementId);
+
+  const updateTextElementLayout = (
+    text: string,
+    overrides?: {
+      fontSize?: number;
+      fontBold?: boolean;
+      fontItalic?: boolean;
+    }
+  ) => {
+    if (!selectedElement || selectedElement.category !== "texte") {
+      return;
+    }
+
+    const nextFontSize = overrides?.fontSize ?? selectedElement.fontSize ?? 18;
+    const nextFontBold = overrides?.fontBold ?? selectedElement.fontBold ?? false;
+    const nextFontItalic = overrides?.fontItalic ?? selectedElement.fontItalic ?? false;
+    const nextText = text.trim().length > 0 ? text : "Texte";
+    const nextSize = measureTextContent({
+      text: nextText,
+      fontSize: nextFontSize * 0.8,
+      fontBold: nextFontBold,
+      fontItalic: nextFontItalic,
+    });
+
+    updateElement(selectedElement.id, {
+      text: nextText,
+      fontSize: nextFontSize,
+      fontBold: nextFontBold,
+      fontItalic: nextFontItalic,
+      width: nextSize.widthPx / 100,
+      height: nextSize.heightPx / 100,
+    });
+  };
 
   const catalogLabel = selectedElement
     ? getCategoryLabel(selectedElement.category)
@@ -123,9 +157,7 @@ export function PropertiesPanel() {
                   <Label className="text-[11px] text-[#64748b]">Contenu</Label>
                   <Input
                     value={selectedElement.text ?? ""}
-                    onChange={(e) =>
-                      updateElement(selectedElement.id, { text: e.target.value })
-                    }
+                    onChange={(e) => updateTextElementLayout(e.target.value)}
                     className="h-7 text-[12px] mt-1 border-[#e2e8f0] bg-[#f8f9fb]"
                   />
                 </div>
@@ -140,7 +172,7 @@ export function PropertiesPanel() {
                             ? "bg-[#1e293b] text-white"
                             : "border border-[#e2e8f0] text-[#475569] hover:bg-[#f1f5f9]"
                         }`}
-                        onClick={() => updateElement(selectedElement.id, { fontSize: s })}
+                        onClick={() => updateTextElementLayout(selectedElement.text ?? "Texte", { fontSize: s })}
                       >
                         {s}
                       </button>
@@ -156,7 +188,7 @@ export function PropertiesPanel() {
                           ? "bg-[#1e293b] text-white"
                           : "border border-[#e2e8f0] text-[#475569] hover:bg-[#f1f5f9]"
                       }`}
-                      onClick={() => updateElement(selectedElement.id, { fontBold: !selectedElement.fontBold })}
+                      onClick={() => updateTextElementLayout(selectedElement.text ?? "Texte", { fontBold: !selectedElement.fontBold })}
                     >
                       Gras
                     </button>
@@ -166,7 +198,7 @@ export function PropertiesPanel() {
                           ? "bg-[#1e293b] text-white"
                           : "border border-[#e2e8f0] text-[#475569] hover:bg-[#f1f5f9]"
                       }`}
-                      onClick={() => updateElement(selectedElement.id, { fontItalic: !selectedElement.fontItalic })}
+                      onClick={() => updateTextElementLayout(selectedElement.text ?? "Texte", { fontItalic: !selectedElement.fontItalic })}
                     >
                       Italique
                     </button>
@@ -176,7 +208,7 @@ export function PropertiesPanel() {
             )}
 
             {/* Dimensions */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-3">
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <Label className="text-[11px] text-[#64748b]">Largeur</Label>
@@ -218,30 +250,6 @@ export function PropertiesPanel() {
                 step={5}
                 onValueChange={(v: number) => updateElement(selectedElement.id, { rotation: v })}
               />
-            </div>
-
-            {/* Position */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-[11px] text-[#64748b]">X (m)</Label>
-                <Input
-                  type="number"
-                  step={0.05}
-                  value={selectedElement.x}
-                  onChange={(e) => updateElement(selectedElement.id, { x: parseFloat(e.target.value) || 0 })}
-                  className="h-7 text-[12px] mt-1 border-[#e2e8f0] bg-[#f8f9fb]"
-                />
-              </div>
-              <div>
-                <Label className="text-[11px] text-[#64748b]">Y (m)</Label>
-                <Input
-                  type="number"
-                  step={0.05}
-                  value={selectedElement.y}
-                  onChange={(e) => updateElement(selectedElement.id, { y: parseFloat(e.target.value) || 0 })}
-                  className="h-7 text-[12px] mt-1 border-[#e2e8f0] bg-[#f8f9fb]"
-                />
-              </div>
             </div>
 
             {/* Color */}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import { useStandStore } from "@/lib/store";
 import { savePlanToApi } from "@/lib/plan-client";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,8 @@ import {
   Redo2,
   Grid3X3,
   Type,
-  Trash2,
-  Upload,
   FileJson,
   Image as ImageIcon,
-  History,
   Save,
   Share2,
 } from "lucide-react";
@@ -35,8 +32,6 @@ export function Toolbar({ onShareOpen }: ToolbarProps) {
     toggleGrid,
     gridSize,
     setGridSize,
-    elements,
-    clearElements,
     planName,
     setPlanName,
     planId,
@@ -45,8 +40,6 @@ export function Toolbar({ onShareOpen }: ToolbarProps) {
     isReadOnly,
     serializePlan,
   } = useStandStore();
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const canUndo = historyIndex >= 0;
   const canRedo = historyIndex < history.length - 1;
@@ -67,7 +60,6 @@ export function Toolbar({ onShareOpen }: ToolbarProps) {
   const handleExportJSON = () => {
     const data = {
       planName,
-      planId,
       dimensions: useStandStore.getState().dimensions,
       elements: useStandStore.getState().elements,
       exportedAt: new Date().toISOString(),
@@ -81,30 +73,6 @@ export function Toolbar({ onShareOpen }: ToolbarProps) {
     a.download = `${planName.replace(/\s+/g, "_")}.json`;
     a.click();
     URL.revokeObjectURL(url);
-  };
-
-  const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const data = JSON.parse(ev.target?.result as string);
-        if (data.dimensions) {
-          useStandStore.getState().setDimensions(data.dimensions);
-        }
-        if (data.elements && Array.isArray(data.elements)) {
-          useStandStore.setState({ elements: data.elements });
-        }
-        if (data.planName) {
-          useStandStore.getState().setPlanName(data.planName);
-        }
-      } catch {
-        alert("Fichier JSON invalide");
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = "";
   };
 
   const handleExportSVG = () => {
@@ -159,9 +127,6 @@ export function Toolbar({ onShareOpen }: ToolbarProps) {
           readOnly={isReadOnly}
           className="text-[13px] font-semibold text-[#1e293b] bg-transparent border-none outline-none w-28 hover:bg-[#f1f5f9] px-1.5 py-1 rounded-md transition-colors"
         />
-        <span className="text-[10px] text-[#94a3b8] font-mono hidden xl:inline">
-          {planId}
-        </span>
       </div>
 
       <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
@@ -212,33 +177,7 @@ export function Toolbar({ onShareOpen }: ToolbarProps) {
         Texte
       </Button>
 
-      {/* Clear */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-7 gap-1.5 text-[11px] font-medium text-[#ef4444] hover:text-[#dc2626] hover:bg-red-50"
-        disabled={isReadOnly}
-        onClick={() => { if (confirm("Effacer tous les éléments ?")) clearElements(); }}
-        title="Tout effacer"
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-        Effacer
-      </Button>
-
       <div className="flex-1" />
-
-      {/* Element count */}
-      <span className="text-[11px] text-[#94a3b8] font-medium mr-1">
-        {elements.length} élément{elements.length !== 1 ? "s" : ""}
-      </span>
-
-      <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
-
-      {/* Import */}
-      <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleImportJSON} disabled={isReadOnly} />
-      <Button variant="ghost" size="icon" className="h-7 w-7 text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" onClick={() => fileInputRef.current?.click()} title="Importer" disabled={isReadOnly}>
-        <Upload className="h-3.5 w-3.5" />
-      </Button>
 
       {/* Export SVG */}
       <Button variant="ghost" size="icon" className="h-7 w-7 text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" onClick={handleExportSVG} title="SVG">
@@ -251,12 +190,6 @@ export function Toolbar({ onShareOpen }: ToolbarProps) {
       </Button>
 
       <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
-
-      {/* History */}
-      <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[11px] font-medium text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" title="Historique" disabled>
-        <History className="h-3.5 w-3.5" />
-        Historique
-      </Button>
 
       {/* Save */}
       <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[11px] font-medium text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" onClick={handleSavePlan} title="Sauvegarder" disabled={isReadOnly || isSaving}>

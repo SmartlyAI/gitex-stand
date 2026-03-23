@@ -39,6 +39,8 @@ export interface StandDimensions {
   depth: number; // in meters
 }
 
+export type StandViewMode = "2d" | "3d";
+
 export interface HistoryEntry {
   elements: StandElement[];
   dimensions: StandDimensions;

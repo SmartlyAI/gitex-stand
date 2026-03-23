@@ -14,13 +14,15 @@ import {
   Save,
   Share2,
 } from "lucide-react";
-import { GridSize } from "@/lib/types";
+import { GridSize, StandViewMode } from "@/lib/types";
 
 interface ToolbarProps {
   onShareOpen: () => void;
+  viewMode: StandViewMode;
+  onViewModeChange: (mode: StandViewMode) => void;
 }
 
-export function Toolbar({ onShareOpen }: ToolbarProps) {
+export function Toolbar({ onShareOpen, viewMode, onViewModeChange }: ToolbarProps) {
   const [isSaving, setIsSaving] = useState(false);
   const {
     undo,
@@ -42,6 +44,7 @@ export function Toolbar({ onShareOpen }: ToolbarProps) {
 
   const canUndo = historyIndex >= 0;
   const canRedo = historyIndex < history.length - 1;
+  const viewModes: StandViewMode[] = ["2d", "3d"];
 
   const handleSavePlan = async () => {
     if (isReadOnly || !planId) return;
@@ -146,6 +149,25 @@ export function Toolbar({ onShareOpen }: ToolbarProps) {
             onClick={() => setGridSize(s)}
           >
             {s} cm
+          </button>
+        ))}
+      </div>
+
+      <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
+
+      <div className="flex items-center rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-0.5">
+        {viewModes.map((mode) => (
+          <button
+            key={mode}
+            type="button"
+            className={`h-6 min-w-9 rounded-md px-2 text-[10px] font-semibold uppercase tracking-wide transition-colors ${
+              viewMode === mode
+                ? "bg-[#1e293b] text-white shadow-sm"
+                : "text-[#64748b] hover:bg-white hover:text-[#334155]"
+            }`}
+            onClick={() => onViewModeChange(mode)}
+          >
+            {mode}
           </button>
         ))}
       </div>

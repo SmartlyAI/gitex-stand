@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useStandStore } from "@/lib/store";
 import { savePlanToApi } from "@/lib/plan-client";
-import { StandPlan } from "@/lib/types";
+import { StandPlan, StandViewMode } from "@/lib/types";
 import {
   buildPlanPath,
   toAbsoluteProjectUrl,
@@ -12,6 +12,7 @@ import {
 import { Toolbar } from "./Toolbar";
 import { FurnitureSidebar } from "./FurnitureSidebar";
 import { Canvas } from "./Canvas";
+import { StandPreview3DCanvas } from "./three/StandPreview3DCanvas";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { ShareModal } from "./ShareModal";
 
@@ -25,6 +26,7 @@ export function StandEditor({
   readOnly = false,
 }: StandEditorProps) {
   const [shareOpen, setShareOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<StandViewMode>("2d");
   const didHydrateRef = useRef(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -90,10 +92,14 @@ export function StandEditor({
           Mode lecture seule — ce plan partagé peut être consulté mais pas modifié.
         </div>
       )}
-      <Toolbar onShareOpen={() => setShareOpen(true)} />
+      <Toolbar
+        onShareOpen={() => setShareOpen(true)}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+      />
       <div className="flex flex-1 overflow-hidden">
         <FurnitureSidebar />
-        <Canvas />
+        {viewMode === "2d" ? <Canvas /> : <StandPreview3DCanvas />}
         <PropertiesPanel />
       </div>
       <ShareModal open={shareOpen} onOpenChange={setShareOpen} />

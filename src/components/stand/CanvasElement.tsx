@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { RotateCw } from "lucide-react";
 import { useStandStore } from "@/lib/store";
 import { StandElement } from "@/lib/types";
 import { measureTextContent } from "@/lib/text-measure";
@@ -10,9 +11,13 @@ interface CanvasElementProps {
   scale: number;
   metersToPx: number;
   isSelected: boolean;
+  isMultiSelected: boolean;
   isReadOnly: boolean;
-  onSelect: () => void;
+  onSelect: (mode?: "single" | "toggle") => void;
+  onDragStart: (id: string) => void;
+  onDragMove: (id: string, totalDxM: number, totalDyM: number) => void;
   onDragEnd: (id: string, newX: number, newY: number) => void;
+  onGroupDragEnd: () => void;
   snapToGrid: (val: number) => number;
   standWidth: number;
   standDepth: number;
@@ -23,19 +28,32 @@ export function CanvasElement({
   scale,
   metersToPx,
   isSelected,
+  isMultiSelected,
   isReadOnly,
   onSelect,
+  onDragStart,
+  onDragMove,
   onDragEnd,
+  onGroupDragEnd,
   snapToGrid,
   standWidth,
   standDepth,
 }: CanvasElementProps) {
-  const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
+  const dragRef = useRef<{
+    startX: number;
+    startY: number;
+    origX: number;
+    origY: number;
+    liveGroup: boolean;
+    didPushHistory: boolean;
+  } | null>(null);
+  const rotateRef = useRef<{ startAngle: number; startRotation: number; didPushHistory: boolean } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isCommittingTextEditRef = useRef(false);
   const [dragOffset, setDragOffset] = useState<{ dx: number; dy: number } | null>(null);
   const [isEditingText, setIsEditingText] = useState(false);
   const [draftText, setDraftText] = useState(element.text ?? "Texte");
+  const [previewRotation, setPreviewRotation] = useState<number | null>(null);
 
   const baseLeft = element.x * metersToPx * scale;
   const baseTop = element.y * metersToPx * scale;
@@ -47,6 +65,7 @@ export function CanvasElement({
   const isDragging = dragOffset !== null;
   const isText = element.category === "texte";
   const baseTextFontSize = (element.fontSize ?? 18) * 0.8;
+  const rotation = previewRotation ?? element.rotation;
 
   useEffect(() => {
     if (!isEditingText || !textareaRef.current) {
@@ -91,16 +110,49 @@ export function CanvasElement({
     if (element.locked || isReadOnly || isEditingText) return;
     e.stopPropagation();
     e.preventDefault();
-    onSelect();
+
+    if (e.metaKey || e.ctrlKey || e.shiftKey) {
+      onSelect("toggle");
+      return;
+    }
+
+    if (!isSelected) {
+      onSelect("single");
+    }
 
     const startX = e.clientX;
     const startY = e.clientY;
-    dragRef.current = { startX, startY, origX: element.x, origY: element.y };
+    const liveGroup = isSelected && isMultiSelected;
+    dragRef.current = {
+      startX,
+      startY,
+      origX: element.x,
+      origY: element.y,
+      liveGroup,
+      didPushHistory: false,
+    };
 
     const handleMouseMove = (ev: MouseEvent) => {
       if (!dragRef.current) return;
       const dx = ev.clientX - dragRef.current.startX;
       const dy = ev.clientY - dragRef.current.startY;
+
+      if (dragRef.current.liveGroup) {
+        if (!dragRef.current.didPushHistory && (Math.abs(dx) > 1 || Math.abs(dy) > 1)) {
+          onDragStart(element.id);
+          dragRef.current.didPushHistory = true;
+        }
+
+        if (dragRef.current.didPushHistory) {
+          const dxM = dx / scale / metersToPx;
+          const dyM = dy / scale / metersToPx;
+          const snappedDx = snapToGrid(dragRef.current.origX + dxM) - dragRef.current.origX;
+          const snappedDy = snapToGrid(dragRef.current.origY + dyM) - dragRef.current.origY;
+          onDragMove(element.id, snappedDx, snappedDy);
+        }
+        return;
+      }
+
       setDragOffset({ dx, dy });
     };
 
@@ -118,7 +170,11 @@ export function CanvasElement({
         const newX = snapToGrid(Math.max(0, Math.min(dragRef.current.origX + dxM, standWidth - element.width)));
         const newY = snapToGrid(Math.max(0, Math.min(dragRef.current.origY + dyM, standDepth - element.height)));
 
-        onDragEnd(element.id, newX, newY);
+        if (dragRef.current.liveGroup) {
+          onGroupDragEnd();
+        } else {
+          onDragEnd(element.id, newX, newY);
+        }
       }
 
       dragRef.current = null;
@@ -129,22 +185,79 @@ export function CanvasElement({
     window.addEventListener("mouseup", handleMouseUp);
   };
 
+  const handleRotateMouseDown = (e: React.MouseEvent) => {
+    if (element.locked || isReadOnly || isEditingText) {
+      return;
+    }
+
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (!isSelected) {
+      onSelect("single");
+    }
+
+    const centerX = left + width / 2;
+    const centerY = top + height / 2;
+    const startAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
+
+    rotateRef.current = {
+      startAngle,
+      startRotation: element.rotation,
+      didPushHistory: false,
+    };
+
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!rotateRef.current) {
+        return;
+      }
+
+      const currentAngle = Math.atan2(event.clientY - centerY, event.clientX - centerX) * (180 / Math.PI);
+      const rawRotation = rotateRef.current.startRotation + (currentAngle - rotateRef.current.startAngle);
+      const nextRotation = event.shiftKey
+        ? Math.round(rawRotation / 15) * 15
+        : rawRotation;
+
+      if (!rotateRef.current.didPushHistory && Math.abs(nextRotation - rotateRef.current.startRotation) > 0.1) {
+        useStandStore.getState().pushHistory();
+        rotateRef.current.didPushHistory = true;
+      }
+
+      setPreviewRotation(nextRotation);
+      useStandStore.getState().setElementRotation(element.id, nextRotation);
+    };
+
+    const handleMouseUp = () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      rotateRef.current = null;
+      setPreviewRotation(null);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+  };
+
+  const containerClassName = `absolute select-none overflow-visible ${
+    isDragging ? "z-50 opacity-90" : "z-10"
+  } ${
+    element.locked || isReadOnly
+      ? "cursor-not-allowed opacity-80"
+      : isEditingText
+        ? "cursor-text"
+        : "cursor-move"
+  }`;
+
   return (
     <div
-      className={`absolute select-none overflow-visible ${
-        isSelected ? "ring-2 ring-blue-500" : ""
-      } ${isDragging ? "shadow-lg z-50 opacity-90" : "z-10"} ${
-        element.locked || isReadOnly
-          ? "cursor-not-allowed opacity-80"
-          : isEditingText
-            ? "cursor-text"
-            : "cursor-move"
-      }`}
+      className={containerClassName}
       style={{
         left,
         top,
         width,
         height,
+        transform: `rotate(${rotation}deg)`,
+        transformOrigin: "center center",
         willChange: isDragging ? "left, top" : "auto",
       }}
       onMouseDown={handleMouseDown}
@@ -155,13 +268,23 @@ export function CanvasElement({
 
         e.stopPropagation();
         e.preventDefault();
-        onSelect();
+        if (!isSelected) {
+          onSelect("single");
+        }
         setDraftText(element.text ?? "Texte");
         setIsEditingText(true);
       }}
       onClick={(e) => {
         e.stopPropagation();
-        onSelect();
+
+        if (e.metaKey || e.ctrlKey || e.shiftKey) {
+          onSelect("toggle");
+          return;
+        }
+
+        if (!isSelected) {
+          onSelect("single");
+        }
       }}
     >
       {isText ? (
@@ -195,11 +318,9 @@ export function CanvasElement({
           />
         ) : (
           <div
-            className="flex h-full w-full items-start justify-start"
-            style={{
-              transform: `rotate(${element.rotation}deg)`,
-              transformOrigin: "center center",
-            }}
+            className={`flex h-full w-full items-start justify-start ${
+              isSelected ? "ring-[3px] ring-blue-500" : ""
+            }`}
           >
             <span
               className="whitespace-pre"
@@ -216,23 +337,37 @@ export function CanvasElement({
           </div>
         )
       ) : (
-        <>
-          <div
-            className="h-full w-full rounded-[4px] shadow-sm"
-            style={{
-              backgroundColor: element.color,
-              transform: `rotate(${element.rotation}deg)`,
-              transformOrigin: "center center",
-            }}
-          />
-          <div className="pointer-events-none absolute left-1/2 top-full mt-1 -translate-x-1/2 rounded-md border border-[#e2e8f0] bg-white/95 px-1.5 py-0.5 text-[10px] font-medium leading-tight text-[#475569] shadow-sm whitespace-nowrap">
+        <div
+          className={`relative flex h-full w-full items-end justify-center overflow-hidden rounded-[4px] px-1 py-1 shadow-sm ${
+            isSelected ? "ring-[3px] ring-blue-500" : ""
+          }`}
+          style={{
+            backgroundColor: element.color,
+          }}
+        >
+          <span className="pointer-events-none text-center text-[8px] font-medium leading-none text-white/85 drop-shadow-[0_1px_1px_rgba(0,0,0,0.35)]">
             {element.name}
-          </div>
-        </>
+          </span>
+        </div>
+      )}
+
+      {isDragging && !isText && (
+        <div className="pointer-events-none absolute inset-0 rounded-[4px] shadow-lg" />
       )}
 
       {isSelected && !element.locked && !isReadOnly && (
-        <div className="absolute bottom-0 right-0 w-3 h-3 bg-blue-500 cursor-se-resize rounded-tl-sm" />
+        <>
+          <div className="absolute bottom-0 right-0 h-3 w-3 rounded-tl-sm bg-blue-500" />
+          <div className="pointer-events-none absolute left-1/2 top-0 h-6 w-px -translate-x-1/2 -translate-y-full bg-blue-400" />
+          <button
+            type="button"
+            onMouseDown={handleRotateMouseDown}
+            className="absolute left-1/2 top-0 flex h-6 w-6 -translate-x-1/2 -translate-y-[calc(100%+24px)] items-center justify-center rounded-full border border-blue-300 bg-white text-blue-600 shadow-sm transition-colors hover:bg-blue-50"
+            title="Pivoter"
+          >
+            <RotateCw className="h-3.5 w-3.5" />
+          </button>
+        </>
       )}
     </div>
   );

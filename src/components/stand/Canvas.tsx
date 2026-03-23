@@ -8,13 +8,21 @@ import { ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 const METERS_TO_PX = 100;
 const RULER_SIZE = 28;
 
+interface SelectionRect {
+  startX: number;
+  startY: number;
+  currentX: number;
+  currentY: number;
+}
+
 export function Canvas() {
   const {
     dimensions,
     elements,
-    selectedElementId,
+    selectedElementIds,
     selectElement,
-    removeElement,
+    setSelectedElements,
+    removeSelectedElements,
     isReadOnly,
     showGrid,
     gridSize,
@@ -22,9 +30,12 @@ export function Canvas() {
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const groupDragOriginsRef = useRef<Map<string, { x: number; y: number }> | null>(null);
+  const didMarqueeRef = useRef(false);
   const [fitScale, setFitScale] = useState(1);
   const [scale, setScale] = useState(1);
   const [hasManualZoom, setHasManualZoom] = useState(false);
+  const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null);
 
   const canvasW = dimensions.width * METERS_TO_PX;
   const canvasH = dimensions.depth * METERS_TO_PX;
@@ -48,7 +59,7 @@ export function Canvas() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (isReadOnly || !selectedElementId || event.key !== "Delete") {
+      if (isReadOnly || selectedElementIds.length === 0 || event.key !== "Delete") {
         return;
       }
 
@@ -64,12 +75,12 @@ export function Canvas() {
       }
 
       event.preventDefault();
-      removeElement(selectedElementId);
+      removeSelectedElements();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isReadOnly, removeElement, selectedElementId]);
+  }, [isReadOnly, removeSelectedElements, selectedElementIds]);
 
   const gridSizePx = (gridSize / 100) * METERS_TO_PX;
 
@@ -82,7 +93,102 @@ export function Canvas() {
   );
 
   const handleCanvasClick = (e: React.MouseEvent) => {
+    if (didMarqueeRef.current) {
+      didMarqueeRef.current = false;
+      return;
+    }
     if (e.target === canvasRef.current) selectElement(null);
+  };
+
+  const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isReadOnly || e.target !== canvasRef.current) {
+      return;
+    }
+
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) {
+      return;
+    }
+
+    const startX = e.clientX - rect.left;
+    const startY = e.clientY - rect.top;
+
+    setSelectionRect({
+      startX,
+      startY,
+      currentX: startX,
+      currentY: startY,
+    });
+
+    const computeIntersectedIds = (left: number, top: number, right: number, bottom: number) =>
+      elements
+        .filter((el) => {
+          const elL = el.x * METERS_TO_PX * scale;
+          const elT = el.y * METERS_TO_PX * scale;
+          const elR = elL + el.width * METERS_TO_PX * scale;
+          const elB = elT + el.height * METERS_TO_PX * scale;
+          return elR >= left && elL <= right && elB >= top && elT <= bottom;
+        })
+        .map((el) => el.id);
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const nextRect = canvasRef.current?.getBoundingClientRect();
+      if (!nextRect) {
+        return;
+      }
+
+      const curX = event.clientX - nextRect.left;
+      const curY = event.clientY - nextRect.top;
+
+      setSelectionRect((currentSelectionRect) =>
+        currentSelectionRect
+          ? { ...currentSelectionRect, currentX: curX, currentY: curY }
+          : currentSelectionRect
+      );
+
+      const l = Math.min(startX, curX);
+      const t = Math.min(startY, curY);
+      const r = Math.max(startX, curX);
+      const b = Math.max(startY, curY);
+      const hasDragged = Math.abs(curX - startX) > 4 || Math.abs(curY - startY) > 4;
+
+      if (hasDragged) {
+        setSelectedElements(computeIntersectedIds(l, t, r, b));
+      }
+    };
+
+    const handleMouseUp = (event: MouseEvent) => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+
+      const nextRect = canvasRef.current?.getBoundingClientRect();
+      if (!nextRect) {
+        setSelectionRect(null);
+        return;
+      }
+
+      const endX = event.clientX - nextRect.left;
+      const endY = event.clientY - nextRect.top;
+      const left = Math.min(startX, endX);
+      const top = Math.min(startY, endY);
+      const right = Math.max(startX, endX);
+      const bottom = Math.max(startY, endY);
+
+      const hasDragged = Math.abs(endX - startX) > 4 || Math.abs(endY - startY) > 4;
+
+      if (!hasDragged) {
+        setSelectionRect(null);
+        selectElement(null);
+        return;
+      }
+
+      setSelectedElements(computeIntersectedIds(left, top, right, bottom));
+      setSelectionRect(null);
+      didMarqueeRef.current = true;
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
   };
 
   const handleDrop = useCallback(
@@ -116,6 +222,62 @@ export function Canvas() {
     },
     []
   );
+
+  const handleElementDragStart = useCallback((id: string) => {
+    const state = useStandStore.getState();
+    if (!state.selectedElementIds.includes(id) || state.selectedElementIds.length < 2) {
+      return;
+    }
+
+    state.pushHistory();
+
+    const origins = new Map<string, { x: number; y: number }>();
+    for (const el of state.elements) {
+      if (state.selectedElementIds.includes(el.id)) {
+        origins.set(el.id, { x: el.x, y: el.y });
+      }
+    }
+    groupDragOriginsRef.current = origins;
+  }, []);
+
+  const handleElementDragMove = useCallback((_id: string, totalDxM: number, totalDyM: number) => {
+    const origins = groupDragOriginsRef.current;
+    if (!origins) return;
+
+    const state = useStandStore.getState();
+    const selectedSet = new Set(state.selectedElementIds);
+
+    let minOrigX = Infinity;
+    let minOrigY = Infinity;
+    let maxOrigRight = -Infinity;
+    let maxOrigBottom = -Infinity;
+
+    for (const el of state.elements) {
+      if (!selectedSet.has(el.id)) continue;
+      const orig = origins.get(el.id);
+      if (!orig) continue;
+      minOrigX = Math.min(minOrigX, orig.x);
+      minOrigY = Math.min(minOrigY, orig.y);
+      maxOrigRight = Math.max(maxOrigRight, orig.x + el.width);
+      maxOrigBottom = Math.max(maxOrigBottom, orig.y + el.height);
+    }
+
+    const constrainedDx = Math.max(-minOrigX, Math.min(totalDxM, state.dimensions.width - maxOrigRight));
+    const constrainedDy = Math.max(-minOrigY, Math.min(totalDyM, state.dimensions.depth - maxOrigBottom));
+
+    useStandStore.setState({
+      elements: state.elements.map((el) => {
+        if (!selectedSet.has(el.id)) return el;
+        const orig = origins.get(el.id);
+        if (!orig) return el;
+        return { ...el, x: orig.x + constrainedDx, y: orig.y + constrainedDy };
+      }),
+    });
+  }, []);
+
+  const handleGroupDragEnd = useCallback(() => {
+    groupDragOriginsRef.current = null;
+  }, []);
 
   const scaledW = canvasW * scale;
   const scaledH = canvasH * scale;
@@ -207,6 +369,7 @@ export function Canvas() {
               cursor: "default",
               border: "1px solid #cbd5e1",
             }}
+            onMouseDown={handleCanvasMouseDown}
             onClick={handleCanvasClick}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
@@ -226,16 +389,37 @@ export function Canvas() {
               </svg>
             )}
 
+            {selectionRect && (
+              <div
+                className="pointer-events-none absolute border border-blue-400 bg-blue-100/30"
+                style={{
+                  left: Math.min(selectionRect.startX, selectionRect.currentX),
+                  top: Math.min(selectionRect.startY, selectionRect.currentY),
+                  width: Math.abs(selectionRect.currentX - selectionRect.startX),
+                  height: Math.abs(selectionRect.currentY - selectionRect.startY),
+                }}
+              />
+            )}
+
             {elements.map((el) => (
               <CanvasElement
                 key={el.id}
                 element={el}
                 scale={scale}
                 metersToPx={METERS_TO_PX}
-                isSelected={el.id === selectedElementId}
+                isSelected={selectedElementIds.includes(el.id)}
+                isMultiSelected={selectedElementIds.length > 1}
                 isReadOnly={isReadOnly}
-                onSelect={() => selectElement(el.id)}
+                onSelect={(mode) =>
+                  selectElement(
+                    el.id,
+                    mode === "toggle" ? { toggle: true } : undefined
+                  )
+                }
+                onDragStart={handleElementDragStart}
+                onDragMove={handleElementDragMove}
                 onDragEnd={handleElementDragEnd}
+                onGroupDragEnd={handleGroupDragEnd}
                 snapToGrid={snapToGrid}
                 standWidth={dimensions.width}
                 standDepth={dimensions.depth}

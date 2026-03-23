@@ -27,12 +27,18 @@ export function PropertiesPanel() {
     setDimensions,
     elements,
     selectedElementId,
+    selectedElementIds,
     updateElement,
     removeElement,
+    removeSelectedElements,
     duplicateElement,
   } = useStandStore();
 
-  const selectedElement = elements.find((e) => e.id === selectedElementId);
+  const selectedCount = selectedElementIds.length;
+  const selectedElement =
+    selectedCount === 1
+      ? elements.find((e) => e.id === selectedElementId)
+      : undefined;
 
   const updateTextElementLayout = (
     text: string,
@@ -128,7 +134,26 @@ export function PropertiesPanel() {
       </div>
 
       {/* Selected Element Properties */}
-      {selectedElement ? (
+      {selectedCount > 1 ? (
+        <div className="px-4 pt-4 pb-4 flex-1">
+          <h3 className="font-semibold text-[13px] text-[#1e293b]">
+            {selectedCount} éléments sélectionnés
+          </h3>
+          <p className="mt-2 text-[12px] leading-relaxed text-[#64748b]">
+            Vous pouvez déplacer ce groupe directement dans la zone de dessin ou
+            appuyer sur Suppr pour tout retirer.
+          </p>
+
+          <div className="mt-4">
+            <button
+              className="h-8 w-full rounded-lg bg-[#ef4444] text-[11px] font-medium text-white transition-colors hover:bg-[#dc2626]"
+              onClick={removeSelectedElements}
+            >
+              Supprimer la sélection
+            </button>
+          </div>
+        </div>
+      ) : selectedElement ? (
         <div className="px-4 pt-4 pb-4 flex-1">
           <h3 className="font-semibold text-[13px] text-[#1e293b]">{selectedElement.name}</h3>
           {catalogLabel && (
@@ -208,34 +233,36 @@ export function PropertiesPanel() {
             )}
 
             {/* Dimensions */}
-            <div className="space-y-3">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <Label className="text-[11px] text-[#64748b]">Largeur</Label>
-                  <span className="text-[10px] font-semibold text-[#1e293b]">{selectedElement.width.toFixed(2)}m</span>
+            {selectedElement.category !== "texte" && (
+              <div className="space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-[11px] text-[#64748b]">Largeur</Label>
+                    <span className="text-[10px] font-semibold text-[#1e293b]">{selectedElement.width.toFixed(2)}m</span>
+                  </div>
+                  <Slider
+                    value={selectedElement.width}
+                    min={0.2}
+                    max={5}
+                    step={0.1}
+                    onValueChange={(v: number) => updateElement(selectedElement.id, { width: v })}
+                  />
                 </div>
-                <Slider
-                  value={selectedElement.width}
-                  min={0.2}
-                  max={5}
-                  step={0.1}
-                  onValueChange={(v: number) => updateElement(selectedElement.id, { width: v })}
-                />
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <Label className="text-[11px] text-[#64748b]">Profondeur</Label>
-                  <span className="text-[10px] font-semibold text-[#1e293b]">{selectedElement.height.toFixed(2)}m</span>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-[11px] text-[#64748b]">Profondeur</Label>
+                    <span className="text-[10px] font-semibold text-[#1e293b]">{selectedElement.height.toFixed(2)}m</span>
+                  </div>
+                  <Slider
+                    value={selectedElement.height}
+                    min={0.2}
+                    max={5}
+                    step={0.1}
+                    onValueChange={(v: number) => updateElement(selectedElement.id, { height: v })}
+                  />
                 </div>
-                <Slider
-                  value={selectedElement.height}
-                  min={0.2}
-                  max={5}
-                  step={0.1}
-                  onValueChange={(v: number) => updateElement(selectedElement.id, { height: v })}
-                />
               </div>
-            </div>
+            )}
 
             {/* Rotation */}
             <div>

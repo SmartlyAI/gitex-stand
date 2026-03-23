@@ -18,13 +18,21 @@ interface StandStore {
   // Elements
   elements: StandElement[];
   selectedElementId: string | null;
-  selectElement: (id: string | null) => void;
+  selectedElementIds: string[];
+  selectElement: (
+    id: string | null,
+    options?: { additive?: boolean; toggle?: boolean }
+  ) => void;
+  setSelectedElements: (ids: string[]) => void;
 
   addElement: (item: FurnitureCatalogItem, x?: number, y?: number) => void;
   addTextElement: (x: number, y: number) => void;
   updateElement: (id: string, updates: Partial<StandElement>) => void;
+  setElementRotation: (id: string, rotation: number) => void;
   moveElement: (id: string, x: number, y: number) => void;
+  moveSelectedElements: (deltaX: number, deltaY: number) => void;
   removeElement: (id: string) => void;
+  removeSelectedElements: () => void;
   duplicateElement: (id: string) => void;
   clearElements: () => void;
 
@@ -64,7 +72,58 @@ export const useStandStore = create<StandStore>((set, get) => ({
 
   elements: [],
   selectedElementId: null,
-  selectElement: (id) => set({ selectedElementId: id }),
+  selectedElementIds: [],
+  selectElement: (id, options) => {
+    if (id === null) {
+      set({ selectedElementId: null, selectedElementIds: [] });
+      return;
+    }
+
+    set((state) => {
+      const alreadySelected = state.selectedElementIds.includes(id);
+
+      if (options?.toggle) {
+        const nextSelectedElementIds = alreadySelected
+          ? state.selectedElementIds.filter((selectedId) => selectedId !== id)
+          : [...state.selectedElementIds, id];
+
+        return {
+          selectedElementIds: nextSelectedElementIds,
+          selectedElementId:
+            nextSelectedElementIds.length > 0
+              ? nextSelectedElementIds[nextSelectedElementIds.length - 1]
+              : null,
+        };
+      }
+
+      if (options?.additive) {
+        const nextSelectedElementIds = alreadySelected
+          ? state.selectedElementIds
+          : [...state.selectedElementIds, id];
+
+        return {
+          selectedElementIds: nextSelectedElementIds,
+          selectedElementId: id,
+        };
+      }
+
+      return {
+        selectedElementId: id,
+        selectedElementIds: [id],
+      };
+    });
+  },
+  setSelectedElements: (ids) => {
+    const normalizedIds = Array.from(new Set(ids));
+
+    set({
+      selectedElementIds: normalizedIds,
+      selectedElementId:
+        normalizedIds.length > 0
+          ? normalizedIds[normalizedIds.length - 1]
+          : null,
+    });
+  },
 
   addElement: (item, x, y) => {
     if (get().isReadOnly) return;
@@ -86,6 +145,7 @@ export const useStandStore = create<StandStore>((set, get) => ({
     set((s) => ({
       elements: [...s.elements, el],
       selectedElementId: el.id,
+      selectedElementIds: [el.id],
     }));
   },
 
@@ -117,6 +177,7 @@ export const useStandStore = create<StandStore>((set, get) => ({
     set((s) => ({
       elements: [...s.elements, el],
       selectedElementId: el.id,
+      selectedElementIds: [el.id],
     }));
   },
 
@@ -130,11 +191,57 @@ export const useStandStore = create<StandStore>((set, get) => ({
     }));
   },
 
+  setElementRotation: (id, rotation) => {
+    if (get().isReadOnly) return;
+
+    const normalizedRotation = ((rotation % 360) + 360) % 360;
+
+    set((state) => ({
+      elements: state.elements.map((element) =>
+        element.id === id
+          ? { ...element, rotation: normalizedRotation }
+          : element
+      ),
+    }));
+  },
+
   moveElement: (id, x, y) => {
     if (get().isReadOnly) return;
     set((s) => ({
       elements: s.elements.map((e) =>
         e.id === id ? { ...e, x, y } : e
+      ),
+    }));
+  },
+
+  moveSelectedElements: (deltaX, deltaY) => {
+    if (get().isReadOnly) return;
+
+    const { elements, selectedElementIds, dimensions } = get();
+    const selectedSet = new Set(selectedElementIds);
+    const selectedElements = elements.filter((element) => selectedSet.has(element.id));
+
+    if (selectedElements.length === 0) {
+      return;
+    }
+
+    const minX = Math.min(...selectedElements.map((element) => element.x));
+    const minY = Math.min(...selectedElements.map((element) => element.y));
+    const maxX = Math.max(...selectedElements.map((element) => element.x + element.width));
+    const maxY = Math.max(...selectedElements.map((element) => element.y + element.height));
+
+    const constrainedDeltaX = Math.max(-minX, Math.min(deltaX, dimensions.width - maxX));
+    const constrainedDeltaY = Math.max(-minY, Math.min(deltaY, dimensions.depth - maxY));
+
+    set((state) => ({
+      elements: state.elements.map((element) =>
+        selectedSet.has(element.id)
+          ? {
+              ...element,
+              x: element.x + constrainedDeltaX,
+              y: element.y + constrainedDeltaY,
+            }
+          : element
       ),
     }));
   },
@@ -146,6 +253,23 @@ export const useStandStore = create<StandStore>((set, get) => ({
       elements: s.elements.filter((e) => e.id !== id),
       selectedElementId:
         s.selectedElementId === id ? null : s.selectedElementId,
+      selectedElementIds: s.selectedElementIds.filter((selectedId) => selectedId !== id),
+    }));
+  },
+
+  removeSelectedElements: () => {
+    if (get().isReadOnly) return;
+
+    const selectedSet = new Set(get().selectedElementIds);
+    if (selectedSet.size === 0) {
+      return;
+    }
+
+    get().pushHistory();
+    set((state) => ({
+      elements: state.elements.filter((element) => !selectedSet.has(element.id)),
+      selectedElementId: null,
+      selectedElementIds: [],
     }));
   },
 
@@ -164,13 +288,14 @@ export const useStandStore = create<StandStore>((set, get) => ({
     set((s) => ({
       elements: [...s.elements, dup],
       selectedElementId: dup.id,
+      selectedElementIds: [dup.id],
     }));
   },
 
   clearElements: () => {
     if (get().isReadOnly) return;
     get().pushHistory();
-    set({ elements: [], selectedElementId: null });
+    set({ elements: [], selectedElementId: null, selectedElementIds: [] });
   },
 
   showGrid: true,
@@ -204,6 +329,7 @@ export const useStandStore = create<StandStore>((set, get) => ({
       dimensions: { ...entry.dimensions },
       historyIndex: historyIndex - 1,
       selectedElementId: null,
+      selectedElementIds: [],
     });
   },
 
@@ -217,6 +343,7 @@ export const useStandStore = create<StandStore>((set, get) => ({
       dimensions: { ...entry.dimensions },
       historyIndex: historyIndex + 1,
       selectedElementId: null,
+      selectedElementIds: [],
     });
   },
 
@@ -242,6 +369,7 @@ export const useStandStore = create<StandStore>((set, get) => ({
           ? plan.historyIndex
           : (plan.history?.length ?? 0) - 1,
       selectedElementId: null,
+      selectedElementIds: [],
     });
   },
 

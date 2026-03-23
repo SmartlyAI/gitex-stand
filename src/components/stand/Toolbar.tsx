@@ -10,7 +10,6 @@ import {
   Redo2,
   Grid3X3,
   Type,
-  FileJson,
   Image as ImageIcon,
   Save,
   Share2,
@@ -55,24 +54,6 @@ export function Toolbar({ onShareOpen }: ToolbarProps) {
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const handleExportJSON = () => {
-    const data = {
-      planName,
-      dimensions: useStandStore.getState().dimensions,
-      elements: useStandStore.getState().elements,
-      exportedAt: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${planName.replace(/\s+/g, "_")}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   const handleExportSVG = () => {
@@ -182,11 +163,6 @@ export function Toolbar({ onShareOpen }: ToolbarProps) {
       {/* Export SVG */}
       <Button variant="ghost" size="icon" className="h-7 w-7 text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" onClick={handleExportSVG} title="SVG">
         <ImageIcon className="h-3.5 w-3.5" />
-      </Button>
-
-      {/* Export JSON */}
-      <Button variant="ghost" size="icon" className="h-7 w-7 text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" onClick={handleExportJSON} title="JSON">
-        <FileJson className="h-3.5 w-3.5" />
       </Button>
 
       <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />

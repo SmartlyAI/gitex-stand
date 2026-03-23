@@ -313,7 +313,8 @@ export function CanvasElement({
               lineHeight: 1.15,
               fontWeight: element.fontBold ? "bold" : "normal",
               fontStyle: element.fontItalic ? "italic" : "normal",
-              color: element.color,
+              // Always use a dark color while editing so text stays readable
+              color: "#111827",
             }}
           />
         ) : (

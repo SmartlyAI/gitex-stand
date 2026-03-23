@@ -40,6 +40,11 @@ export function PropertiesPanel() {
       ? elements.find((e) => e.id === selectedElementId)
       : undefined;
 
+  const selectedFontSizeValue =
+    selectedElement?.category === "texte"
+      ? String(selectedElement.fontSize ?? 18)
+      : "";
+
   const updateTextElementLayout = (
     text: string,
     overrides?: {
@@ -163,17 +168,19 @@ export function PropertiesPanel() {
           )}
 
           <div className="space-y-3">
-            {/* Name */}
-            <div>
-              <Label className="text-[11px] text-[#64748b]">Nom</Label>
-              <Input
-                value={selectedElement.name}
-                onChange={(e) =>
-                  updateElement(selectedElement.id, { name: e.target.value })
-                }
-                className="h-7 text-[12px] mt-1 border-[#e2e8f0] bg-[#f8f9fb]"
-              />
-            </div>
+            {/* Name (hidden for text elements) */}
+            {selectedElement.category !== "texte" && (
+              <div>
+                <Label className="text-[11px] text-[#64748b]">Nom</Label>
+                <Input
+                  value={selectedElement.name}
+                  onChange={(e) =>
+                    updateElement(selectedElement.id, { name: e.target.value })
+                  }
+                  className="h-7 text-[12px] mt-1 border-[#e2e8f0] bg-[#f8f9fb]"
+                />
+              </div>
+            )}
 
             {/* Text content */}
             {selectedElement.category === "texte" && (
@@ -188,20 +195,27 @@ export function PropertiesPanel() {
                 </div>
                 <div>
                   <Label className="text-[11px] text-[#64748b]">Taille de police</Label>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {[14, 16, 18, 24, 28, 36, 48].map((s) => (
-                      <button
-                        key={s}
-                        className={`h-6 px-2 text-[10px] font-medium rounded-md transition-colors ${
-                          selectedElement.fontSize === s
-                            ? "bg-[#1e293b] text-white"
-                            : "border border-[#e2e8f0] text-[#475569] hover:bg-[#f1f5f9]"
-                        }`}
-                        onClick={() => updateTextElementLayout(selectedElement.text ?? "Texte", { fontSize: s })}
-                      >
-                        {s}
-                      </button>
-                    ))}
+                  <div className="mt-1 flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={selectedFontSizeValue}
+                      onChange={(e) => {
+                        const nextValue = e.target.value;
+                        const parsedValue = Number(nextValue);
+
+                        if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
+                          return;
+                        }
+
+                        updateTextElementLayout(selectedElement.text ?? "Texte", {
+                          fontSize: parsedValue,
+                        });
+                      }}
+                      className="h-7 w-24 text-[12px] border-[#e2e8f0] bg-[#f8f9fb]"
+                    />
+                    <span className="text-[11px] text-[#64748b]">px</span>
                   </div>
                 </div>
                 <div>

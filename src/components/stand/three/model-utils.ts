@@ -19,17 +19,17 @@ export function getElementHeight(element: StandElement) {
     case "fauteuil":
       return 0.86;
     case "tabouret_haut":
-      return 0.8;
+      return 0.78;
     case "pouf":
       return 0.48;
     case "table_demo":
-      return 0.76;
+      return 1.02;
     case "table_haute":
       return 1.04;
     case "table_basse":
       return 0.42;
     case "ecran_pied":
-      return 1.86;
+      return 2.28;
     case "totem":
       return 2.15;
     case "mur_image":

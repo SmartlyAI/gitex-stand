@@ -55,7 +55,7 @@ export const catalog: CatalogCategory[] = [
         category: "assises",
         width: 0.4,
         height: 0.4,
-        color: "#34495E",
+        color: "#F8FAFC",
       },
       {
         id: "pouf",
@@ -103,7 +103,7 @@ export const catalog: CatalogCategory[] = [
     items: [
       {
         id: "ecran_pied",
-        name: "Écran sur pied",
+        name: "TV sur cloison",
         category: "ecrans_supports",
         width: 0.6,
         height: 0.4,

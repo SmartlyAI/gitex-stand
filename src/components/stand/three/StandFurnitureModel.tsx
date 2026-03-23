@@ -49,26 +49,149 @@ function TableLegs({ depth, height, inset = 0.08, width }: { depth: number; heig
   );
 }
 
-function Stool({ color, depth, height, width }: { color: string; depth: number; height: number; width: number }) {
-  const radius = Math.min(width, depth) * 0.42;
+function Stool({ depth, height, width }: { depth: number; height: number; width: number }) {
+  const seatHeight = 0.06;
+  const seatWidth = width * 0.92;
+  const seatDepth = depth * 0.92;
+  const legHeight = Math.max(height - seatHeight - 0.05, 0.6);
+  const legX = Math.max(seatWidth / 2 - 0.05, 0.08);
+  const legZ = Math.max(seatDepth / 2 - 0.05, 0.08);
+  const stretcherY = Math.min(0.29, legHeight * 0.42);
 
   return (
     <>
-      <mesh castShadow position={[0, height - 0.05, 0]} receiveShadow>
-        <cylinderGeometry args={[radius, radius * 0.92, 0.08, 24]} />
-        <meshStandardMaterial color={tone(color, 0.08)} roughness={0.62} />
+      <RoundedBox args={[seatWidth, seatHeight, seatDepth]} castShadow position={[0, height - seatHeight / 2, 0]} radius={0.035} receiveShadow smoothness={4}>
+        <meshStandardMaterial color="#f8fafc" metalness={0.04} roughness={0.34} />
+      </RoundedBox>
+      <mesh castShadow position={[0, height - seatHeight - 0.03, 0]} receiveShadow>
+        <boxGeometry args={[seatWidth * 0.46, 0.028, seatDepth * 0.46]} />
+        <meshStandardMaterial color="#e5e7eb" roughness={0.48} />
       </mesh>
-      <mesh castShadow position={[0, height / 2 - 0.02, 0]} receiveShadow>
-        <cylinderGeometry args={[0.045, 0.055, height - 0.12, 16]} />
-        <meshStandardMaterial color="#4b5563" metalness={0.25} roughness={0.45} />
+
+      {[
+        [legX, legHeight / 2, legZ],
+        [legX, legHeight / 2, -legZ],
+        [-legX, legHeight / 2, legZ],
+        [-legX, legHeight / 2, -legZ],
+      ].map((position, index) => (
+        <mesh castShadow key={index} position={position as [number, number, number]} receiveShadow>
+          <cylinderGeometry args={[0.02, 0.024, legHeight, 18]} />
+          <meshStandardMaterial color="#b98a5f" roughness={0.7} />
+        </mesh>
+      ))}
+
+      {[
+        [0, stretcherY, legZ * 0.84, seatWidth * 0.6, 0.028, 0.024],
+        [0, stretcherY, -legZ * 0.84, seatWidth * 0.6, 0.028, 0.024],
+        [legX * 0.84, stretcherY, 0, 0.024, 0.028, seatDepth * 0.6],
+        [-legX * 0.84, stretcherY, 0, 0.024, 0.028, seatDepth * 0.6],
+      ].map((args, index) => (
+        <mesh castShadow key={`stretcher-${index}`} position={[args[0], args[1], args[2]] as [number, number, number]} receiveShadow>
+          <boxGeometry args={[args[3], args[4], args[5]]} />
+          <meshStandardMaterial color="#c28f64" roughness={0.68} />
+        </mesh>
+      ))}
+    </>
+  );
+}
+
+function DemoTable({ color, depth, height, width }: { color: string; depth: number; height: number; width: number }) {
+  const topThickness = 0.06;
+  const panelThickness = 0.055;
+  const plinthHeight = 0.06;
+  const bodyHeight = height - topThickness;
+  const nicheWidth = Math.max(width * 0.34, 0.34);
+  const dividerX = -width / 2 + nicheWidth + panelThickness / 2;
+  const cabinetFaceWidth = Math.max(width - nicheWidth - panelThickness * 2, width * 0.42);
+
+  return (
+    <>
+      <RoundedBox args={[width, topThickness, depth]} castShadow position={[0, height - topThickness / 2, 0]} radius={0.018} receiveShadow smoothness={4}>
+        <meshStandardMaterial color="#f8fafc" metalness={0.03} roughness={0.38} />
+      </RoundedBox>
+
+      <mesh castShadow position={[width / 2 - panelThickness / 2, bodyHeight / 2, 0]} receiveShadow>
+        <boxGeometry args={[panelThickness, bodyHeight, depth]} />
+        <meshStandardMaterial color={tone(color, 0.08)} roughness={0.56} />
       </mesh>
-      <mesh castShadow position={[0, 0.16, 0]} receiveShadow rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[radius * 0.62, 0.02, 10, 32]} />
-        <meshStandardMaterial color="#6b7280" metalness={0.3} roughness={0.4} />
+      <mesh castShadow position={[-width / 2 + panelThickness / 2, bodyHeight / 2, 0]} receiveShadow>
+        <boxGeometry args={[panelThickness, bodyHeight, depth]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.86} />
       </mesh>
-      <mesh castShadow position={[0, 0.03, 0]} receiveShadow>
-        <cylinderGeometry args={[radius * 0.58, radius * 0.72, 0.04, 24]} />
-        <meshStandardMaterial color="#374151" metalness={0.32} roughness={0.42} />
+      <mesh castShadow position={[0, bodyHeight / 2, -depth / 2 + panelThickness / 2]} receiveShadow>
+        <boxGeometry args={[width, bodyHeight, panelThickness]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.84} />
+      </mesh>
+
+      <mesh castShadow position={[dividerX, bodyHeight / 2, 0]} receiveShadow>
+        <boxGeometry args={[panelThickness, bodyHeight, depth * 0.92]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.84} />
+      </mesh>
+      <mesh castShadow position={[width / 2 - cabinetFaceWidth / 2 - panelThickness * 0.5, bodyHeight / 2, depth / 2 - panelThickness / 2]} receiveShadow>
+        <boxGeometry args={[cabinetFaceWidth, bodyHeight - plinthHeight, panelThickness]} />
+        <meshStandardMaterial color={tone(color, 0.04)} roughness={0.5} />
+      </mesh>
+      <mesh castShadow position={[width / 2 - cabinetFaceWidth * 0.18 - panelThickness * 0.5, bodyHeight / 2, depth / 2 + 0.004]} receiveShadow>
+        <boxGeometry args={[0.012, bodyHeight * 0.2, 0.014]} />
+        <meshStandardMaterial color="#cbd5e1" metalness={0.24} roughness={0.36} />
+      </mesh>
+
+      <mesh castShadow position={[0, plinthHeight / 2, depth / 2 - 0.015]} receiveShadow>
+        <boxGeometry args={[width, plinthHeight, 0.03]} />
+        <meshStandardMaterial color="#d1d5db" roughness={0.8} />
+      </mesh>
+      <mesh castShadow position={[width / 2 - 0.015, plinthHeight / 2, 0]} receiveShadow>
+        <boxGeometry args={[0.03, plinthHeight, depth]} />
+        <meshStandardMaterial color="#d1d5db" roughness={0.8} />
+      </mesh>
+    </>
+  );
+}
+
+function PartitionTv({ color, depth, height, width }: { color: string; depth: number; height: number; width: number }) {
+  const partitionWidth = Math.max(width * 0.96, 0.56);
+  const partitionDepth = Math.max(depth * 0.28, 0.08);
+  const screenWidth = partitionWidth * 0.76;
+  const screenHeight = height * 0.2;
+
+  return (
+    <>
+      <RoundedBox args={[partitionWidth, height, partitionDepth]} castShadow position={[0, height / 2, 0]} radius={0.02} receiveShadow smoothness={4}>
+        <meshStandardMaterial color="#f8fafc" roughness={0.76} />
+      </RoundedBox>
+
+      <mesh position={[0, height * 0.48, partitionDepth / 2 + 0.004]}>
+        <planeGeometry args={[partitionWidth * 0.84, height * 0.94]} />
+        <meshStandardMaterial color={tone(color, 0.12)} emissive={tone(color, 0.03)} emissiveIntensity={0.05} side={DoubleSide} />
+      </mesh>
+      <mesh position={[0, height * 0.84, partitionDepth / 2 + 0.005]}>
+        <planeGeometry args={[partitionWidth * 0.76, height * 0.12]} />
+        <meshStandardMaterial color="#ffffff" side={DoubleSide} />
+      </mesh>
+      <mesh position={[0, height * 0.22, partitionDepth / 2 + 0.005]}>
+        <planeGeometry args={[partitionWidth * 0.76, height * 0.24]} />
+        <meshStandardMaterial color={tone(color, 0.26)} emissive={tone(color, 0.1)} emissiveIntensity={0.08} side={DoubleSide} />
+      </mesh>
+
+      <mesh castShadow position={[0, height * 0.62, partitionDepth / 2 + 0.03]} receiveShadow>
+        <boxGeometry args={[0.08, 0.12, 0.02]} />
+        <meshStandardMaterial color="#94a3b8" metalness={0.26} roughness={0.38} />
+      </mesh>
+      <RoundedBox args={[screenWidth, screenHeight, 0.05]} castShadow position={[0, height * 0.62, partitionDepth / 2 + 0.06]} radius={0.018} receiveShadow smoothness={4}>
+        <meshStandardMaterial color="#0f172a" metalness={0.14} roughness={0.28} />
+      </RoundedBox>
+      <mesh position={[0, height * 0.62, partitionDepth / 2 + 0.088]}>
+        <planeGeometry args={[screenWidth * 0.9, screenHeight * 0.82]} />
+        <meshStandardMaterial color="#111827" emissive="#1d4ed8" emissiveIntensity={0.08} side={DoubleSide} />
+      </mesh>
+
+      <mesh castShadow position={[0, 0.025, depth * 0.22]} receiveShadow>
+        <boxGeometry args={[partitionWidth * 0.58, 0.03, 0.08]} />
+        <meshStandardMaterial color="#e5e7eb" roughness={0.72} />
+      </mesh>
+      <mesh castShadow position={[0, 0.025, -depth * 0.22]} receiveShadow>
+        <boxGeometry args={[partitionWidth * 0.58, 0.03, 0.08]} />
+        <meshStandardMaterial color="#e5e7eb" roughness={0.72} />
       </mesh>
     </>
   );
@@ -175,7 +298,7 @@ function FurnitureBody({ color, depth, element, height, width }: { color: string
         </>
       );
     case "tabouret_haut":
-      return <Stool color={color} depth={depth} height={height} width={width} />;
+      return <Stool depth={depth} height={height} width={width} />;
     case "pouf":
       return (
         <mesh castShadow position={[0, height / 2, 0]} receiveShadow>
@@ -184,14 +307,7 @@ function FurnitureBody({ color, depth, element, height, width }: { color: string
         </mesh>
       );
     case "table_demo":
-      return (
-        <>
-          <RoundedBox args={[width, 0.08, depth]} castShadow position={[0, height - 0.04, 0]} radius={0.04} receiveShadow smoothness={4}>
-            <meshStandardMaterial color={tone(color, 0.18)} metalness={0.12} roughness={0.42} />
-          </RoundedBox>
-          <TableLegs depth={depth} height={height} width={width} />
-        </>
-      );
+      return <DemoTable color={color} depth={depth} height={height} width={width} />;
     case "table_haute":
       return (
         <>
@@ -219,25 +335,7 @@ function FurnitureBody({ color, depth, element, height, width }: { color: string
         </>
       );
     case "ecran_pied":
-      return (
-        <>
-          <mesh castShadow position={[0, 0.04, 0]} receiveShadow>
-            <cylinderGeometry args={[0.2, 0.24, 0.04, 24]} />
-            <meshStandardMaterial color="#111827" metalness={0.28} roughness={0.42} />
-          </mesh>
-          <mesh castShadow position={[0, 0.8, 0]} receiveShadow>
-            <cylinderGeometry args={[0.04, 0.045, 1.5, 20]} />
-            <meshStandardMaterial color="#4b5563" metalness={0.32} roughness={0.36} />
-          </mesh>
-          <RoundedBox args={[width, height * 0.52, 0.08]} castShadow position={[0, height - height * 0.24, 0]} radius={0.03} receiveShadow smoothness={4}>
-            <meshStandardMaterial color="#0f172a" metalness={0.16} roughness={0.3} />
-          </RoundedBox>
-          <mesh position={[0, height - height * 0.24, 0.042]}>
-            <planeGeometry args={[width * 0.88, height * 0.42]} />
-            <meshStandardMaterial color={tone(color, 0.3)} emissive={tone(color, 0.12)} emissiveIntensity={0.2} side={DoubleSide} />
-          </mesh>
-        </>
-      );
+      return <PartitionTv color={color} depth={depth} height={height} width={width} />;
     case "totem":
       return (
         <>

@@ -31,8 +31,8 @@ export function StandPreview3DCanvas({ isReadOnly, onZoomIn, onZoomOut, onZoomRe
   }, []);
 
   return (
-    <div className="h-full w-full overflow-hidden bg-[radial-gradient(circle_at_top,_#ffffff,_#eef2ff_45%,_#e2e8f0_100%)]">
-      <div className="relative h-full w-full">
+    <div className="flex-1 w-full h-full min-h-0 relative overflow-hidden bg-[radial-gradient(circle_at_top,_#ffffff,_#eef2ff_45%,_#e2e8f0_100%)]">
+      <div className="absolute inset-0">
         <Canvas
           camera={{ fov: 42, position: [8, 5, 8] }}
           className="h-full w-full"

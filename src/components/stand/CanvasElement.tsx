@@ -23,6 +23,56 @@ interface CanvasElementProps {
   standDepth: number;
 }
 
+function FurniturePlanPreview({ element, isSelected }: { element: StandElement; isSelected: boolean }) {
+  if (element.catalogId === "mini_bar_couronne_logo") {
+    return (
+      <div
+        className={`relative flex h-full w-full items-end justify-center overflow-hidden rounded-[6px] px-1 py-1 shadow-sm ${
+          isSelected ? "ring-[3px] ring-blue-500" : ""
+        }`}
+        style={{
+          background: `linear-gradient(180deg, ${element.color} 0%, rgba(71, 53, 31, 0.92) 100%)`,
+        }}
+      >
+        <div className="absolute inset-[12%] rounded-[6px] border-2 border-white/70" />
+        <div className="absolute inset-x-[18%] inset-y-[26%] rounded-[999px] border border-white/55 bg-[#4b2e1c]/30" />
+        <div className="absolute inset-x-[24%] inset-y-[32%] rounded-[999px] border border-white/35 bg-black/10" />
+        <div className="absolute left-[14%] top-[14%] h-[10%] w-[10%] rounded-[3px] bg-white/80" />
+        <div className="absolute right-[14%] top-[14%] h-[10%] w-[10%] rounded-[3px] bg-white/80" />
+        <div className="absolute bottom-[14%] left-[14%] h-[10%] w-[10%] rounded-[3px] bg-white/80" />
+        <div className="absolute bottom-[14%] right-[14%] h-[10%] w-[10%] rounded-[3px] bg-white/80" />
+        <div
+          className="absolute left-1/2 top-[14%] h-[16%] w-[52%] -translate-x-1/2 rounded-full border border-white/65 bg-white/85 bg-center bg-contain bg-no-repeat"
+          style={{
+            backgroundImage: element.logoAsset?.url
+              ? `url(${element.logoAsset.url})`
+              : undefined,
+          }}
+        />
+        <div className="absolute left-1/2 bottom-[8%] h-[16%] w-[18%] -translate-x-1/2 rounded-t-md border border-white/45 bg-[#6b4423]/80" />
+        <span className="pointer-events-none relative text-center text-[8px] font-medium leading-none text-white/90 drop-shadow-[0_1px_1px_rgba(0,0,0,0.35)]">
+          {element.name}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`relative flex h-full w-full items-end justify-center overflow-hidden rounded-[4px] px-1 py-1 shadow-sm ${
+        isSelected ? "ring-[3px] ring-blue-500" : ""
+      }`}
+      style={{
+        backgroundColor: element.color,
+      }}
+    >
+      <span className="pointer-events-none text-center text-[8px] font-medium leading-none text-white/85 drop-shadow-[0_1px_1px_rgba(0,0,0,0.35)]">
+        {element.name}
+      </span>
+    </div>
+  );
+}
+
 export function CanvasElement({
   element,
   scale,
@@ -343,18 +393,7 @@ export function CanvasElement({
           </div>
         )
       ) : (
-        <div
-          className={`relative flex h-full w-full items-end justify-center overflow-hidden rounded-[4px] px-1 py-1 shadow-sm ${
-            isSelected ? "ring-[3px] ring-blue-500" : ""
-          }`}
-          style={{
-            backgroundColor: element.color,
-          }}
-        >
-          <span className="pointer-events-none text-center text-[8px] font-medium leading-none text-white/85 drop-shadow-[0_1px_1px_rgba(0,0,0,0.35)]">
-            {element.name}
-          </span>
-        </div>
+        <FurniturePlanPreview element={element} isSelected={isSelected} />
       )}
 
       {isDragging && !isText && (

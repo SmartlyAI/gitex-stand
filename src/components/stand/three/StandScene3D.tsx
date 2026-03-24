@@ -5,6 +5,7 @@ import { ContactShadows, Line, OrbitControls, PerspectiveCamera } from "@react-t
 import { ThreeEvent } from "@react-three/fiber";
 import { getStandFloorPalette, getStandPlatformMetrics } from "@/lib/stand-floor";
 import { StandDimensions, StandElement, StandFloorSettings } from "@/lib/types";
+import { AssetPlane } from "./AssetPlane";
 import { StandFurnitureModel } from "./StandFurnitureModel";
 
 interface StandScene3DProps {
@@ -100,6 +101,19 @@ function StandShell({ depth, floorSettings, width }: { depth: number; floorSetti
         <boxGeometry args={[width, thickness, depth]} />
         <meshStandardMaterial color={palette.surfaceColor} metalness={floorSettings.finish === "parquet" ? 0.08 : 0.04} roughness={palette.roughness} />
       </mesh>
+
+      {floorSettings.finish === "parquet" && floorSettings.textureAsset ? (
+        <group position={[width / 2, topY + 0.004, depth / 2]} rotation={[-Math.PI / 2, 0, 0]}>
+          <AssetPlane
+            asset={floorSettings.textureAsset}
+            height={depth}
+            repeatX={Math.max(width / 1.6, 1)}
+            repeatY={Math.max(depth / 1.6, 1)}
+            tone="#ffffff"
+            width={width}
+          />
+        </group>
+      ) : null}
 
       <mesh position={[width / 2, topY - 0.03, depth + 0.045]}>
         <boxGeometry args={[width, 0.06, 0.03]} />

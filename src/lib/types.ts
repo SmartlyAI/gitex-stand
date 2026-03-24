@@ -16,6 +16,16 @@ export interface FurnitureCatalogItem {
   icon?: string;
 }
 
+export type StandAssetKind = "logo" | "parquet_texture";
+
+export interface StandAssetReference {
+  assetId: string;
+  contentType: string;
+  filename: string;
+  kind: StandAssetKind;
+  url: string;
+}
+
 export type TvScreenMode = "single" | "double";
 
 export interface StandElement {
@@ -39,6 +49,8 @@ export interface StandElement {
   tvScreen2Inches?: number;
   tvScreen1CenterY?: number;
   tvScreen2CenterY?: number;
+  logoFrameHeight?: number;
+  logoAsset?: StandAssetReference | null;
 }
 
 export interface StandDimensions {
@@ -52,6 +64,7 @@ export interface StandFloorSettings {
   finish: StandFloorFinish;
   color: string;
   elevation: number;
+  textureAsset?: StandAssetReference | null;
 }
 
 export type StandViewMode = "2d" | "3d";

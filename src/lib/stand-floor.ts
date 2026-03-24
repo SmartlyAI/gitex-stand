@@ -1,10 +1,12 @@
 import type { CSSProperties } from "react";
 import { StandFloorFinish, StandFloorSettings } from "./types";
+import { normalizeStandFloorAssetSettings } from "./stand-assets";
 
 export const DEFAULT_STAND_FLOOR_SETTINGS: StandFloorSettings = {
   finish: "sol_uni",
   color: "#f8fafc",
   elevation: 0,
+  textureAsset: null,
 };
 
 export const STAND_FLOOR_FINISHES: Array<{
@@ -63,7 +65,7 @@ function mixHex(color: string, target: string, ratio: number) {
 export function normalizeStandFloorSettings(
   settings?: Partial<StandFloorSettings> | null
 ): StandFloorSettings {
-  return {
+  return normalizeStandFloorAssetSettings({
     finish: settings?.finish ?? DEFAULT_STAND_FLOOR_SETTINGS.finish,
     color: normalizeHex(settings?.color ?? DEFAULT_STAND_FLOOR_SETTINGS.color),
     elevation: clamp(
@@ -71,7 +73,8 @@ export function normalizeStandFloorSettings(
       0,
       0.3
     ),
-  };
+    textureAsset: settings?.textureAsset ?? DEFAULT_STAND_FLOOR_SETTINGS.textureAsset,
+  });
 }
 
 export function getStandFloorFinishLabel(finish: StandFloorFinish) {
@@ -136,6 +139,19 @@ export function getStandFloorCanvasStyle(
     const base = mixHex(normalized.color, "#ffffff", 0.08);
     const seam = mixHex(normalized.color, "#111827", 0.18);
     const strip = mixHex(normalized.color, "#fef3c7", 0.14);
+
+    if (normalized.textureAsset) {
+      return {
+        backgroundColor: base,
+        backgroundImage: `linear-gradient(rgba(255,255,255,0.16), rgba(17,24,39,0.08)), repeating-linear-gradient(90deg, transparent 0px, transparent 58px, ${seam} 58px, ${seam} 60px), url(${normalized.textureAsset.url})`,
+        backgroundPosition: "center, center, center",
+        backgroundSize: "cover, 120px 120px, 420px 420px",
+        boxShadow:
+          lift > 0
+            ? `0 ${10 + lift * 0.65}px ${22 + lift * 1.4}px rgba(15, 23, 42, 0.18)`
+            : "0 1px 2px rgba(15, 23, 42, 0.04)",
+      };
+    }
 
     return {
       backgroundColor: base,

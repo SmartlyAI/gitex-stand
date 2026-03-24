@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
+import { FloorAssetSettings, MiniBarLogoSettings } from "./StandAssetPanels";
 import {
   RotateCw,
   Copy,
@@ -219,6 +220,11 @@ export function PropertiesPanel() {
                 onValueChange={(v: number) => updateFloorSettings({ elevation: v })}
               />
             </div>
+
+            <FloorAssetSettings
+              floorSettings={floorSettings}
+              updateFloorSettings={updateFloorSettings}
+            />
           </div>
         </div>
       </div>
@@ -485,6 +491,11 @@ export function PropertiesPanel() {
                 )}
               </div>
             )}
+
+            <MiniBarLogoSettings
+              element={selectedElement}
+              updateElement={updateElement}
+            />
 
             {/* Rotation */}
             <div>

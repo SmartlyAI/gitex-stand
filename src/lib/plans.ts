@@ -2,6 +2,7 @@ import "server-only";
 import { WithId, Document } from "mongodb";
 import { getMongoDb } from "@/lib/mongodb";
 import { DEFAULT_STAND_FLOOR_SETTINGS, normalizeStandFloorSettings } from "@/lib/stand-floor";
+import { normalizeStandElements } from "@/lib/stand-assets";
 import { StandPlan } from "@/lib/types";
 
 const COLLECTION_NAME = "stand_plans";
@@ -14,9 +15,10 @@ function normalizePlan(document: StandPlanDocument): StandPlan {
     planName: document.planName,
     dimensions: document.dimensions,
     floorSettings: normalizeStandFloorSettings(document.floorSettings),
-    elements: document.elements,
+    elements: normalizeStandElements(document.elements),
     history: (document.history ?? []).map((entry) => ({
       ...entry,
+      elements: normalizeStandElements(entry.elements),
       floorSettings: normalizeStandFloorSettings(entry.floorSettings),
     })),
     historyIndex: typeof document.historyIndex === "number" ? document.historyIndex : -1,
@@ -38,18 +40,28 @@ export async function savePlan(plan: StandPlan): Promise<StandPlan> {
   const db = await getMongoDb();
   const now = new Date().toISOString();
   const existing = await getPlanById(plan.planId);
+  const normalizedPlan: StandPlan = {
+    ...plan,
+    floorSettings: normalizeStandFloorSettings(plan.floorSettings),
+    elements: normalizeStandElements(plan.elements),
+    history: (plan.history ?? []).map((entry) => ({
+      ...entry,
+      elements: normalizeStandElements(entry.elements),
+      floorSettings: normalizeStandFloorSettings(entry.floorSettings),
+    })),
+  };
 
   await db.collection<StandPlan>(COLLECTION_NAME).updateOne(
-    { planId: plan.planId },
+    { planId: normalizedPlan.planId },
     {
       $set: {
-        planId: plan.planId,
-        planName: plan.planName,
-        dimensions: plan.dimensions,
-        floorSettings: plan.floorSettings ?? DEFAULT_STAND_FLOOR_SETTINGS,
-        elements: plan.elements,
-        history: plan.history,
-        historyIndex: plan.historyIndex,
+        planId: normalizedPlan.planId,
+        planName: normalizedPlan.planName,
+        dimensions: normalizedPlan.dimensions,
+        floorSettings: normalizedPlan.floorSettings ?? DEFAULT_STAND_FLOOR_SETTINGS,
+        elements: normalizedPlan.elements,
+        history: normalizedPlan.history,
+        historyIndex: normalizedPlan.historyIndex,
         updatedAt: now,
       },
       $setOnInsert: {
@@ -60,7 +72,7 @@ export async function savePlan(plan: StandPlan): Promise<StandPlan> {
   );
 
   return {
-    ...plan,
+    ...normalizedPlan,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };

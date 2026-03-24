@@ -128,30 +128,33 @@ export function Toolbar({ onShareOpen, viewMode, onViewModeChange }: ToolbarProp
       {/* Grid toggle */}
       <Button
         variant={showGrid ? "secondary" : "ghost"}
-        size="icon"
-        className={`h-7 w-7 ${showGrid ? "bg-[#f1f5f9] text-[#1e293b]" : "text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]"}`}
+        size="sm"
+        className={`h-7 gap-1.5 px-2 text-[11px] font-medium ${showGrid ? "bg-[#f1f5f9] text-[#1e293b]" : "text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]"}`}
         onClick={toggleGrid}
-        title="Grille"
+        title={showGrid ? "Masquer la grille" : "Afficher la grille"}
       >
         <Grid3X3 className="h-3.5 w-3.5" />
+        {showGrid ? "Masquer grille" : "Afficher grille"}
       </Button>
 
       {/* Grid size selector */}
-      <div className="flex items-center gap-0.5 mx-0.5">
-        {gridSizes.map((s) => (
-          <button
-            key={s}
-            className={`h-6 px-2 text-[10px] font-medium rounded-md transition-colors ${
-              gridSize === s
-                ? "bg-[#1e293b] text-white"
-                : "text-[#64748b] hover:bg-[#f1f5f9] hover:text-[#334155]"
-            }`}
-            onClick={() => setGridSize(s)}
-          >
-            {s} cm
-          </button>
-        ))}
-      </div>
+      {showGrid ? (
+        <div className="flex items-center gap-0.5 mx-0.5">
+          {gridSizes.map((s) => (
+            <button
+              key={s}
+              className={`h-6 px-2 text-[10px] font-medium rounded-md transition-colors ${
+                gridSize === s
+                  ? "bg-[#1e293b] text-white"
+                  : "text-[#64748b] hover:bg-[#f1f5f9] hover:text-[#334155]"
+              }`}
+              onClick={() => setGridSize(s)}
+            >
+              {s} cm
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
 

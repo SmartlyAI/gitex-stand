@@ -14,6 +14,11 @@ export function getElementHeight(element: StandElement) {
       return 1.15;
     case "comptoir_accueil":
       return 1.05;
+    case "mini_bar_couronne_logo":
+      return Math.min(
+        Math.max(element.logoFrameHeight ?? 3.2, 2.4),
+        4.4
+      );
     case "canape":
       return 0.88;
     case "fauteuil":

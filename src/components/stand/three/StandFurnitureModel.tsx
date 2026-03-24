@@ -6,6 +6,7 @@ import { ThreeEvent } from "@react-three/fiber";
 import { DoubleSide } from "three";
 import { StandElement } from "@/lib/types";
 import { StandPlantModel } from "./StandPlantModel";
+import { MiniBarLogoCrown as MiniBarLogoCrownModel } from "./MiniBarLogoCrown";
 import { getElementFootprint, getElementHeight, tone } from "./model-utils";
 
 interface StandFurnitureModelProps {
@@ -147,6 +148,18 @@ function DemoTable({ color, depth, height, width }: { color: string; depth: numb
   );
 }
 
+function MiniBarLogoCrown({ color, depth, element, height, width }: { color: string; depth: number; element: StandElement; height: number; width: number }) {
+  return (
+    <MiniBarLogoCrownModel
+      color={color}
+      depth={depth}
+      element={element}
+      height={height}
+      width={width}
+    />
+  );
+}
+
 function getScreenSizeFromInches(inches: number) {
   const safeInches = Math.max(24, Math.min(inches, 120));
   const diagonalMeters = safeInches * 0.0254;
@@ -281,6 +294,8 @@ function FurnitureBody({ color, depth, element, height, width }: { color: string
           </mesh>
         </>
       );
+    case "mini_bar_couronne_logo":
+      return <MiniBarLogoCrown color={color} depth={depth} element={element} height={height} width={width} />;
     case "canape":
       return (
         <>

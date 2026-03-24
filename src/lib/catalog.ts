@@ -27,6 +27,14 @@ export const catalog: CatalogCategory[] = [
         height: 0.6,
         color: "#2C3E50",
       },
+      {
+        id: "mini_bar_couronne_logo",
+        name: "Mini-bar avec couronne logo",
+        category: "bars_comptoirs",
+        width: 2.8,
+        height: 1.6,
+        color: "#C8A36A",
+      },
     ],
   },
   {

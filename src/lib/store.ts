@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { nanoid } from "nanoid";
 import { measureTextContent } from "./text-measure";
 import { DEFAULT_STAND_FLOOR_SETTINGS, normalizeStandFloorSettings } from "./stand-floor";
+import { normalizeStandElementAssets, normalizeStandElements } from "./stand-assets";
 import {
   StandElement,
   StandDimensions,
@@ -154,6 +155,13 @@ export const useStandStore = create<StandStore>((set, get) => ({
             tvScreen2CenterY: 1.45,
           }
         : {};
+    const miniBarDefaults =
+      item.id === "mini_bar_couronne_logo"
+        ? {
+            logoFrameHeight: 3.2,
+            logoAsset: null,
+          }
+        : {};
     const el: StandElement = {
       id: nanoid(8),
       catalogId: item.id,
@@ -167,9 +175,10 @@ export const useStandStore = create<StandStore>((set, get) => ({
       color: item.color,
       locked: false,
       ...tvDefaults,
+      ...miniBarDefaults,
     };
     set((s) => ({
-      elements: [...s.elements, el],
+      elements: [...s.elements, normalizeStandElementAssets(el)],
       selectedElementId: el.id,
       selectedElementIds: [el.id],
     }));
@@ -212,7 +221,7 @@ export const useStandStore = create<StandStore>((set, get) => ({
     get().pushHistory();
     set((s) => ({
       elements: s.elements.map((e) =>
-        e.id === id ? { ...e, ...updates } : e
+        e.id === id ? normalizeStandElementAssets({ ...e, ...updates }) : e
       ),
     }));
   },
@@ -392,9 +401,9 @@ export const useStandStore = create<StandStore>((set, get) => ({
       planName: plan.planName,
       dimensions: { ...plan.dimensions },
       floorSettings: normalizeStandFloorSettings(plan.floorSettings),
-      elements: JSON.parse(JSON.stringify(plan.elements)),
+      elements: normalizeStandElements(JSON.parse(JSON.stringify(plan.elements))),
       history: (plan.history ?? []).map((entry) => ({
-        elements: JSON.parse(JSON.stringify(entry.elements)),
+        elements: normalizeStandElements(JSON.parse(JSON.stringify(entry.elements))),
         dimensions: { ...entry.dimensions },
         floorSettings: normalizeStandFloorSettings(entry.floorSettings),
       })),

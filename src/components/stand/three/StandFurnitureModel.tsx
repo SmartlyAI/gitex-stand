@@ -211,24 +211,20 @@ function PartitionTv({ color, depth, element, height, width }: { color: string; 
       
       {/* Sticker Façade Avant */}
       {element.tvBaseStickerAsset && (
-        <mesh position={[0, panelHeight / 2, panelThickness / 2 + 0.002]}>
-          <planeGeometry args={[width * 0.96, panelHeight * 0.98]} />
-          <meshStandardMaterial color="#ffffff" map={null} />
+        <group position={[0, panelHeight / 2, panelThickness / 2 + 0.001]}>
           <AssetPlane asset={element.tvBaseStickerAsset} height={panelHeight * 0.98} width={width * 0.96} />
-        </mesh>
+        </group>
       )}
       
       {/* Sticker Façade Arrière */}
       {element.tvBaseStickerAsset && (
-        <mesh position={[0, panelHeight / 2, -panelThickness / 2 - 0.002]} rotation={[0, Math.PI, 0]}>
-          <planeGeometry args={[width * 0.96, panelHeight * 0.98]} />
-          <meshStandardMaterial color="#ffffff" map={null} />
+        <group position={[0, panelHeight / 2, -panelThickness / 2 - 0.001]} rotation={[0, Math.PI, 0]}>
           <AssetPlane asset={element.tvBaseStickerAsset} height={panelHeight * 0.98} width={width * 0.96} />
-        </mesh>
+        </group>
       )}
 
       {(tvMode === "single" || tvMode === "double") && (
-        <group position={[0, screen1CenterY, panelThickness / 2 + 0.015]}>
+        <group position={[0, screen1CenterY, panelThickness / 2 + 0.005]}>
           <mesh castShadow receiveShadow>
             <boxGeometry args={[tv1Width, tv1Height, 0.03]} />
             <meshStandardMaterial color="#1e293b" metalness={0.4} roughness={0.6} />
@@ -247,7 +243,7 @@ function PartitionTv({ color, depth, element, height, width }: { color: string; 
       )}
 
       {tvMode === "double" && (
-        <group position={[0, screen2CenterY, -panelThickness / 2 - 0.015]} rotation={[0, Math.PI, 0]}>
+        <group position={[0, screen2CenterY, -panelThickness / 2 - 0.005]} rotation={[0, Math.PI, 0]}>
           <mesh castShadow receiveShadow>
             <boxGeometry args={[tv2Width, tv2Height, 0.03]} />
             <meshStandardMaterial color="#1e293b" metalness={0.4} roughness={0.6} />

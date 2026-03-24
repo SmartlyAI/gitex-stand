@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
-import { FloorAssetSettings, MiniBarLogoSettings } from "./StandAssetPanels";
+import { FloorAssetSettings, MiniBarLogoSettings, PartitionTvSettings } from "./StandAssetPanels";
 import {
   RotateCw,
   Copy,
@@ -562,6 +562,11 @@ export function PropertiesPanel() {
             )}
 
             <MiniBarLogoSettings
+              element={selectedElement}
+              updateElement={updateElement}
+            />
+
+            <PartitionTvSettings
               element={selectedElement}
               updateElement={updateElement}
             />

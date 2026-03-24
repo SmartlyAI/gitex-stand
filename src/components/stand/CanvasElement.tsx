@@ -18,6 +18,7 @@ interface CanvasElementProps {
   onDragMove: (id: string, totalDxM: number, totalDyM: number) => void;
   onDragEnd: (id: string, newX: number, newY: number) => void;
   onGroupDragEnd: () => void;
+  onResizeEnd?: (id: string, newWidth: number, newHeight: number) => void;
   snapToGrid: (val: number) => number;
   standWidth: number;
   standDepth: number;
@@ -134,6 +135,7 @@ export function CanvasElement({
   onDragMove,
   onDragEnd,
   onGroupDragEnd,
+  onResizeEnd,
   snapToGrid,
   standWidth,
   standDepth,
@@ -147,21 +149,26 @@ export function CanvasElement({
     didPushHistory: boolean;
   } | null>(null);
   const rotateRef = useRef<{ startAngle: number; startRotation: number; didPushHistory: boolean } | null>(null);
+  const resizeRef = useRef<{ startX: number; startY: number; startWidth: number; startHeight: number; didPushHistory: boolean } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isCommittingTextEditRef = useRef(false);
   const [dragOffset, setDragOffset] = useState<{ dx: number; dy: number } | null>(null);
+  const [resizeOffset, setResizeOffset] = useState<{ dw: number; dh: number } | null>(null);
   const [isEditingText, setIsEditingText] = useState(false);
   const [draftText, setDraftText] = useState(element.text ?? "Texte");
   const [previewRotation, setPreviewRotation] = useState<number | null>(null);
 
   const baseLeft = element.x * metersToPx * scale;
   const baseTop = element.y * metersToPx * scale;
-  const width = element.width * metersToPx * scale;
-  const height = element.height * metersToPx * scale;
+  const baseWidth = element.width * metersToPx * scale;
+  const baseHeight = element.height * metersToPx * scale;
 
   const left = baseLeft + (dragOffset?.dx ?? 0);
   const top = baseTop + (dragOffset?.dy ?? 0);
+  const width = baseWidth + (resizeOffset?.dw ?? 0);
+  const height = baseHeight + (resizeOffset?.dh ?? 0);
   const isDragging = dragOffset !== null;
+  const isResizing = resizeOffset !== null;
   const isText = element.category === "texte";
   const baseTextFontSize = (element.fontSize ?? 18) * 0.8;
   const rotation = previewRotation ?? element.rotation;
@@ -337,6 +344,76 @@ export function CanvasElement({
     window.addEventListener("mouseup", handleMouseUp);
   };
 
+  const handleResizeMouseDown = (e: React.MouseEvent) => {
+    if (element.locked || isReadOnly || isEditingText || isText) {
+      return;
+    }
+
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (!isSelected) {
+      onSelect("single");
+    }
+
+    resizeRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startWidth: element.width,
+      startHeight: element.height,
+      didPushHistory: false,
+    };
+
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!resizeRef.current) return;
+
+      const dx = event.clientX - resizeRef.current.startX;
+      const dy = event.clientY - resizeRef.current.startY;
+
+      // Unrotate the dx/dy to match the element's local coordinate system
+      const angleRad = (-element.rotation * Math.PI) / 180;
+      const localDx = dx * Math.cos(angleRad) - dy * Math.sin(angleRad);
+      const localDy = dx * Math.sin(angleRad) + dy * Math.cos(angleRad);
+
+      if (!resizeRef.current.didPushHistory && (Math.abs(localDx) > 1 || Math.abs(localDy) > 1)) {
+        useStandStore.getState().pushHistory();
+        resizeRef.current.didPushHistory = true;
+      }
+
+      // Live visual preview via local state
+      setResizeOffset({ dw: localDx, dh: localDy });
+    };
+
+    const handleMouseUp = (event: MouseEvent) => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+
+      if (resizeRef.current && onResizeEnd) {
+        const dx = event.clientX - resizeRef.current.startX;
+        const dy = event.clientY - resizeRef.current.startY;
+        
+        const angleRad = (-element.rotation * Math.PI) / 180;
+        const localDx = dx * Math.cos(angleRad) - dy * Math.sin(angleRad);
+        const localDy = dx * Math.sin(angleRad) + dy * Math.cos(angleRad);
+
+        const dwM = localDx / scale / metersToPx;
+        const dhM = localDy / scale / metersToPx;
+
+        // Min size 1cm (0.01m)
+        const newWidth = Math.max(0.01, resizeRef.current.startWidth + dwM);
+        const newHeight = Math.max(0.01, resizeRef.current.startHeight + dhM);
+
+        onResizeEnd(element.id, newWidth, newHeight);
+      }
+
+      resizeRef.current = null;
+      setResizeOffset(null);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+  };
+
   const layerClassName = isText
     ? isDragging
       ? "z-[90] opacity-95"
@@ -362,7 +439,7 @@ export function CanvasElement({
         height,
         transform: `rotate(${rotation}deg)`,
         transformOrigin: "center center",
-        willChange: isDragging ? "left, top" : "auto",
+        willChange: isDragging || isResizing ? "left, top, width, height" : "auto",
       }}
       onMouseDown={handleMouseDown}
       onDoubleClick={(e) => {
@@ -449,19 +526,24 @@ export function CanvasElement({
         <div className="pointer-events-none absolute inset-0 rounded-[4px] shadow-lg" />
       )}
 
-      {isSelected && !element.locked && !isReadOnly && (
-        <>
-          <div className="absolute bottom-0 right-0 h-3 w-3 rounded-tl-sm bg-blue-500" />
-          <div className="pointer-events-none absolute left-1/2 top-0 h-6 w-px -translate-x-1/2 -translate-y-full bg-blue-400" />
-          <button
-            type="button"
-            onMouseDown={handleRotateMouseDown}
-            className="absolute left-1/2 top-0 flex h-6 w-6 -translate-x-1/2 -translate-y-[calc(100%+24px)] items-center justify-center rounded-full border border-blue-300 bg-white text-blue-600 shadow-sm transition-colors hover:bg-blue-50"
-            title="Pivoter"
-          >
-            <RotateCw className="h-3.5 w-3.5" />
-          </button>
-        </>
+      {/* Rotate Handle */}
+      {!isReadOnly && !element.locked && isSelected && (
+        <div
+          className="absolute -right-5 top-1/2 z-[100] flex -translate-y-1/2 cursor-grab items-center justify-center rounded-full border border-blue-500 bg-white p-1 shadow-sm active:cursor-grabbing"
+          onMouseDown={handleRotateMouseDown}
+          title="Pivoter"
+        >
+          <RotateCw className="h-2.5 w-2.5 text-blue-600" />
+        </div>
+      )}
+
+      {/* Resize Handle (bottom-right) */}
+      {!isReadOnly && !element.locked && !isText && isSelected && (
+        <div
+          className="absolute -bottom-1 -right-1 z-[100] h-3 w-3 cursor-se-resize rounded-full border border-blue-500 bg-white shadow-sm"
+          onMouseDown={handleResizeMouseDown}
+          title="Redimensionner"
+        />
       )}
     </div>
   );

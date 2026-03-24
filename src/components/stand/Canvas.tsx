@@ -285,6 +285,14 @@ export function Canvas() {
     });
   }, []);
 
+  const handleElementResizeEnd = useCallback(
+    (id: string, newWidth: number, newHeight: number) => {
+      useStandStore.getState().pushHistory();
+      useStandStore.getState().updateElement(id, { width: newWidth, height: newHeight });
+    },
+    []
+  );
+
   const handleGroupDragEnd = useCallback(() => {
     groupDragOriginsRef.current = null;
   }, []);
@@ -431,6 +439,7 @@ export function Canvas() {
                 onDragMove={handleElementDragMove}
                 onDragEnd={handleElementDragEnd}
                 onGroupDragEnd={handleGroupDragEnd}
+                onResizeEnd={handleElementResizeEnd}
                 snapToGrid={snapToGrid}
                 standWidth={dimensions.width}
                 standDepth={dimensions.depth}

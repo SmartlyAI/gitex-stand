@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useStandStore } from "@/lib/store";
 import { STAND_FLOOR_FINISHES } from "@/lib/stand-floor";
 import { measureTextContent } from "@/lib/text-measure";
@@ -56,6 +56,27 @@ export function PropertiesPanel() {
   const selectedTvScreenMode: TvScreenMode =
     selectedElement?.tvScreenMode ?? "single";
 
+  // Tab state: "stand" (Global) or "element" (Local)
+  const [activeTab, setActiveTab] = useState<"stand" | "element">("stand");
+
+  // Auto-switch to element tab when an element is selected
+  // Ref to track if we've already done the initial switch for this selection to avoid effect loops
+  const prevSelectedCountRef = React.useRef(selectedCount);
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    
+    if (selectedCount > 0 && prevSelectedCountRef.current === 0) {
+      timeoutId = setTimeout(() => setActiveTab("element"), 0);
+    } else if (selectedCount === 0 && prevSelectedCountRef.current > 0) {
+      timeoutId = setTimeout(() => setActiveTab("stand"), 0);
+    }
+    prevSelectedCountRef.current = selectedCount;
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [selectedCount]);
+
   const updatePartitionTv = (updates: {
     tvScreenMode?: TvScreenMode;
     tvScreen1Inches?: number;
@@ -109,145 +130,174 @@ export function PropertiesPanel() {
 
   return (
     <div className="w-72 border-l border-[#e5e7eb] bg-white flex flex-col h-full overflow-y-auto">
-      {/* Stand Dimensions */}
-      <div className="px-4 pt-4 pb-3 border-b border-[#e5e7eb]">
-        <h3 className="font-semibold text-[13px] text-[#1e293b] mb-3">Dimensions du stand</h3>
-
-        <div className="space-y-3">
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <Label className="text-[11px] text-[#64748b]">Largeur :</Label>
-              <span className="text-[12px] font-semibold text-[#1e293b]">{dimensions.width}m</span>
-            </div>
-            <Slider
-              value={dimensions.width}
-              min={3}
-              max={12}
-              step={0.5}
-              onValueChange={(v: number) =>
-                setDimensions({ ...dimensions, width: v })
-              }
-            />
-          </div>
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <Label className="text-[11px] text-[#64748b]">Profondeur :</Label>
-              <span className="text-[12px] font-semibold text-[#1e293b]">{dimensions.depth}m</span>
-            </div>
-            <Slider
-              value={dimensions.depth}
-              min={3}
-              max={12}
-              step={0.5}
-              onValueChange={(v: number) =>
-                setDimensions({ ...dimensions, depth: v })
-              }
-            />
-          </div>
-        </div>
-
-        <div className="flex gap-1.5 mt-3">
-          {PRESETS.map((p, i) => (
-            <button
-              key={i}
-              className={`flex-1 h-7 text-[11px] font-medium rounded-lg transition-colors ${
-                dimensions.width === p.w && dimensions.depth === p.d
-                  ? "bg-[#1e293b] text-white"
-                  : "border border-[#e2e8f0] text-[#475569] hover:bg-[#f1f5f9]"
-              }`}
-              onClick={() => setDimensions({ width: p.w, depth: p.d })}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-4 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-3">
-          <h4 className="text-[11px] font-semibold uppercase tracking-wide text-[#475569]">
-            Sol du stand
-          </h4>
-
-          <div className="mt-3 space-y-3">
-            <div>
-              <Label className="text-[11px] text-[#64748b]">Finition</Label>
-              <div className="mt-1 flex gap-2">
-                {STAND_FLOOR_FINISHES.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    className={`h-7 flex-1 rounded-lg px-2 text-[10px] font-medium transition-colors ${
-                      floorSettings.finish === option.value
-                        ? "bg-[#1e293b] text-white"
-                        : "border border-[#e2e8f0] bg-white text-[#475569] hover:bg-[#f1f5f9]"
-                    }`}
-                    onClick={() => updateFloorSettings({ finish: option.value })}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-[11px] text-[#64748b]">{selectedFloorFinish.accentLabel}</Label>
-              <div className="mt-1 flex items-center gap-2">
-                <input
-                  type="color"
-                  value={floorSettings.color}
-                  onChange={(e) => updateFloorSettings({ color: e.target.value })}
-                  className="h-7 w-7 rounded-md border border-[#e2e8f0] p-0.5"
-                />
-                <Input
-                  value={floorSettings.color}
-                  onChange={(e) => updateFloorSettings({ color: e.target.value })}
-                  className="h-7 flex-1 border-[#e2e8f0] bg-white font-mono text-[12px]"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-[11px] text-[#64748b]">Couleur LED (Contour)</Label>
-              <div className="mt-1 flex items-center gap-2">
-                <input
-                  type="color"
-                  value={floorSettings.ledColor ?? "#a855f7"}
-                  onChange={(e) => updateFloorSettings({ ledColor: e.target.value })}
-                  className="h-7 w-7 rounded-md border border-[#e2e8f0] p-0.5"
-                />
-                <Input
-                  value={floorSettings.ledColor ?? "#a855f7"}
-                  onChange={(e) => updateFloorSettings({ ledColor: e.target.value })}
-                  className="h-7 flex-1 border-[#e2e8f0] bg-white font-mono text-[12px]"
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <Label className="text-[11px] text-[#64748b]">Surélévation</Label>
-                <span className="text-[10px] font-semibold text-[#1e293b]">
-                  {Math.round(floorSettings.elevation * 100)} cm
-                </span>
-              </div>
-              <Slider
-                value={floorSettings.elevation}
-                min={0}
-                max={0.3}
-                step={0.01}
-                onValueChange={(v: number) => updateFloorSettings({ elevation: v })}
-              />
-            </div>
-
-            <FloorAssetSettings
-              floorSettings={floorSettings}
-              updateFloorSettings={updateFloorSettings}
-            />
-          </div>
-        </div>
+      {/* Tabs */}
+      <div className="flex border-b border-[#e5e7eb] shrink-0 sticky top-0 bg-white z-10">
+        <button
+          className={`flex-1 h-11 text-[11px] font-semibold tracking-wide transition-colors ${
+            activeTab === "stand"
+              ? "text-[#1e293b] border-b-2 border-[#1e293b] bg-white"
+              : "text-[#64748b] hover:text-[#1e293b] hover:bg-[#f8fafc] border-b-2 border-transparent"
+          }`}
+          onClick={() => setActiveTab("stand")}
+        >
+          GLOBAL (STAND)
+        </button>
+        <button
+          className={`flex-1 h-11 text-[11px] font-semibold tracking-wide transition-colors ${
+            activeTab === "element"
+              ? "text-[#1e293b] border-b-2 border-[#1e293b] bg-white"
+              : "text-[#64748b] hover:text-[#1e293b] hover:bg-[#f8fafc] border-b-2 border-transparent"
+          }`}
+          onClick={() => setActiveTab("element")}
+        >
+          LOCAL (ÉLÉMENT)
+        </button>
       </div>
 
+      {/* Stand Content (Global) */}
+      {activeTab === "stand" && (
+        <div className="flex flex-col">
+          {/* Stand Dimensions */}
+          <div className="px-4 pt-4 pb-3 border-b border-[#e5e7eb]">
+            <h3 className="font-semibold text-[13px] text-[#1e293b] mb-3">Dimensions du stand</h3>
+
+            <div className="space-y-3">
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <Label className="text-[11px] text-[#64748b]">Largeur :</Label>
+                  <span className="text-[12px] font-semibold text-[#1e293b]">{dimensions.width}m</span>
+                </div>
+                <Slider
+                  value={dimensions.width}
+                  min={3}
+                  max={12}
+                  step={0.5}
+                  onValueChange={(v: number) =>
+                    setDimensions({ ...dimensions, width: v })
+                  }
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <Label className="text-[11px] text-[#64748b]">Profondeur :</Label>
+                  <span className="text-[12px] font-semibold text-[#1e293b]">{dimensions.depth}m</span>
+                </div>
+                <Slider
+                  value={dimensions.depth}
+                  min={3}
+                  max={12}
+                  step={0.5}
+                  onValueChange={(v: number) =>
+                    setDimensions({ ...dimensions, depth: v })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-1.5 mt-3">
+              {PRESETS.map((p, i) => (
+                <button
+                  key={i}
+                  className={`flex-1 h-7 text-[11px] font-medium rounded-lg transition-colors ${
+                    dimensions.width === p.w && dimensions.depth === p.d
+                      ? "bg-[#1e293b] text-white"
+                      : "border border-[#e2e8f0] text-[#475569] hover:bg-[#f1f5f9]"
+                  }`}
+                  onClick={() => setDimensions({ width: p.w, depth: p.d })}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-4 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-3">
+              <h4 className="text-[11px] font-semibold uppercase tracking-wide text-[#475569]">
+                Sol du stand
+              </h4>
+
+              <div className="mt-3 space-y-3">
+                <div>
+                  <Label className="text-[11px] text-[#64748b]">Finition</Label>
+                  <div className="mt-1 flex gap-2">
+                    {STAND_FLOOR_FINISHES.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={`h-7 flex-1 rounded-lg px-2 text-[10px] font-medium transition-colors ${
+                          floorSettings.finish === option.value
+                            ? "bg-[#1e293b] text-white"
+                            : "border border-[#e2e8f0] bg-white text-[#475569] hover:bg-[#f1f5f9]"
+                        }`}
+                        onClick={() => updateFloorSettings({ finish: option.value })}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-[11px] text-[#64748b]">{selectedFloorFinish.accentLabel}</Label>
+                  <div className="mt-1 flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={floorSettings.color}
+                      onChange={(e) => updateFloorSettings({ color: e.target.value })}
+                      className="h-7 w-7 rounded-md border border-[#e2e8f0] p-0.5"
+                    />
+                    <Input
+                      value={floorSettings.color}
+                      onChange={(e) => updateFloorSettings({ color: e.target.value })}
+                      className="h-7 flex-1 border-[#e2e8f0] bg-white font-mono text-[12px]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-[11px] text-[#64748b]">Couleur LED du stand</Label>
+                  <div className="mt-1 flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={floorSettings.ledColor ?? "#a855f7"}
+                      onChange={(e) => updateFloorSettings({ ledColor: e.target.value })}
+                      className="h-7 w-7 rounded-md border border-[#e2e8f0] p-0.5"
+                    />
+                    <Input
+                      value={floorSettings.ledColor ?? "#a855f7"}
+                      onChange={(e) => updateFloorSettings({ ledColor: e.target.value })}
+                      className="h-7 flex-1 border-[#e2e8f0] bg-white font-mono text-[12px]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-[11px] text-[#64748b]">Surélévation</Label>
+                    <span className="text-[10px] font-semibold text-[#1e293b]">
+                      {Math.round(floorSettings.elevation * 100)} cm
+                    </span>
+                  </div>
+                  <Slider
+                    value={floorSettings.elevation}
+                    min={0}
+                    max={0.3}
+                    step={0.01}
+                    onValueChange={(v: number) => updateFloorSettings({ elevation: v })}
+                  />
+                </div>
+
+                <FloorAssetSettings
+                  floorSettings={floorSettings}
+                  updateFloorSettings={updateFloorSettings}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Selected Element Properties */}
-      {selectedCount > 1 ? (
+      {activeTab === "element" && selectedCount > 1 && (
         <div className="px-4 pt-4 pb-4 flex-1">
           <h3 className="font-semibold text-[13px] text-[#1e293b]">
             {selectedCount} éléments sélectionnés
@@ -266,7 +316,9 @@ export function PropertiesPanel() {
             </button>
           </div>
         </div>
-      ) : selectedElement ? (
+      )}
+
+      {activeTab === "element" && selectedCount === 1 && selectedElement ? (
         <div className="px-4 pt-4 pb-4 flex-1">
           <h3 className="font-semibold text-[13px] text-[#1e293b]">{selectedElement.name}</h3>
           {catalogLabel && (
@@ -613,7 +665,9 @@ export function PropertiesPanel() {
             </div>
           </div>
         </div>
-      ) : (
+      ) : null}
+
+      {activeTab === "element" && selectedCount === 0 && (
         <div className="px-4 flex-1 flex items-center justify-center">
           <p className="text-[12px] text-[#94a3b8] text-center leading-relaxed">
             Sélectionnez un élément ou cliquez

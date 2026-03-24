@@ -5,6 +5,7 @@ import { STAND_ASSET_ACCEPT } from "@/lib/stand-assets";
 import { StandElement, StandFloorSettings } from "@/lib/types";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import { AssetUploadField } from "./AssetUploadField";
 
 interface FloorAssetSettingsProps {
@@ -48,14 +49,33 @@ export function MiniBarLogoSettings({
   const crownHeight = element.logoFrameHeight ?? 3.2;
 
   return (
-    <div className="space-y-3 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-3">
+    <div className="space-y-4 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-3">
       <div>
         <h4 className="text-[11px] font-semibold uppercase tracking-wide text-[#475569]">
-          Couronne logo
+          Mini-bar
         </h4>
-        <p className="mt-1 text-[10px] leading-relaxed text-[#94a3b8]">
-          Mini-bar creux avec porte d’accès arrière et couronne signalétique autoportée.
-        </p>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <Label className="text-[11px] text-[#64748b]">Couleur LED</Label>
+          <span className="text-[10px] font-semibold text-[#1e293b] uppercase">
+            {element.ledColor ?? "#a855f7"}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="color"
+            value={element.ledColor ?? "#a855f7"}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateElement(element.id, { ledColor: e.target.value })}
+            className="h-7 w-7 rounded-md border border-[#e2e8f0] p-0.5"
+          />
+          <Input
+            value={element.ledColor ?? "#a855f7"}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateElement(element.id, { ledColor: e.target.value })}
+            className="h-7 flex-1 border-[#e2e8f0] bg-white font-mono text-[12px]"
+          />
+        </div>
       </div>
 
       <div>

@@ -52,6 +52,7 @@ export interface StandElement {
   logoFrameHeight?: number;
   logoAsset?: StandAssetReference | null;
   storageOrientation?: "left" | "right"; // Orientation du rangement (ex: tables de démo)
+  ledColor?: string; // Couleur de la LED spécifique à l'objet (ex: mini bar)
 }
 
 export interface StandDimensions {

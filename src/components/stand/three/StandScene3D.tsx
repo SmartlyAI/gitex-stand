@@ -66,6 +66,7 @@ function FloorGrid({ depth, gridSize, showGrid, topY, width }: { depth: number; 
 function StandShell({ depth, floorSettings, width }: { depth: number; floorSettings: StandFloorSettings; width: number }) {
   const { thickness, topY } = getStandPlatformMetrics(floorSettings);
   const palette = getStandFloorPalette(floorSettings);
+  const ledColor = floorSettings.ledColor ?? "#a855f7";
   const plankLines = useMemo(() => {
     if (floorSettings.finish !== "parquet") {
       return [] as Array<{ key: string; points: [number, number, number][] }>;
@@ -127,6 +128,24 @@ function StandShell({ depth, floorSettings, width }: { depth: number; floorSetti
           <meshStandardMaterial color={palette.sheenColor} roughness={1} />
         </mesh>
       )}
+
+      {/* Liseré LED faisant le tour du stand */}
+      <mesh position={[width / 2, topY, depth + 0.065]}>
+        <boxGeometry args={[width, 0.015, 0.01]} />
+        <meshStandardMaterial color={ledColor} emissive={ledColor} emissiveIntensity={0.8} roughness={0.2} />
+      </mesh>
+      <mesh position={[width + 0.005, topY, depth / 2]} rotation={[0, Math.PI / 2, 0]}>
+        <boxGeometry args={[depth, 0.015, 0.01]} />
+        <meshStandardMaterial color={ledColor} emissive={ledColor} emissiveIntensity={0.8} roughness={0.2} />
+      </mesh>
+      <mesh position={[-0.005, topY, depth / 2]} rotation={[0, Math.PI / 2, 0]}>
+        <boxGeometry args={[depth, 0.015, 0.01]} />
+        <meshStandardMaterial color={ledColor} emissive={ledColor} emissiveIntensity={0.8} roughness={0.2} />
+      </mesh>
+      <mesh position={[width / 2, topY, -0.005]}>
+        <boxGeometry args={[width, 0.015, 0.01]} />
+        <meshStandardMaterial color={ledColor} emissive={ledColor} emissiveIntensity={0.8} roughness={0.2} />
+      </mesh>
 
       {plankLines.map((line) => (
         <Line color={palette.edgeColor} key={line.key} lineWidth={0.5} points={line.points} transparent opacity={0.38} />

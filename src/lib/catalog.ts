@@ -106,6 +106,20 @@ export const catalog: CatalogCategory[] = [
     ],
   },
   {
+    id: "presentation",
+    label: "Présentation",
+    items: [
+      {
+        id: "presentoir_brochures",
+        name: "Porte-brochures",
+        category: "decoration",
+        width: 0.3,
+        height: 0.4,
+        color: "#94a3b8",
+      },
+    ],
+  },
+  {
     id: "ecrans_supports",
     label: "Écrans & Supports",
     items: [

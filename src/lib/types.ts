@@ -2,6 +2,7 @@ export type FurnitureCategory =
   | "bars_comptoirs"
   | "assises"
   | "tables"
+  | "presentation"
   | "ecrans_supports"
   | "decoration"
   | "texte";
@@ -16,7 +17,7 @@ export interface FurnitureCatalogItem {
   icon?: string;
 }
 
-export type StandAssetKind = "logo" | "parquet_texture";
+export type StandAssetKind = "logo" | "parquet_texture" | "tv_screen" | "tv_sticker";
 
 export interface StandAssetReference {
   assetId: string;
@@ -49,6 +50,9 @@ export interface StandElement {
   tvScreen2Inches?: number;
   tvScreen1CenterY?: number;
   tvScreen2CenterY?: number;
+  tvScreen1Asset?: StandAssetReference | null;
+  tvScreen2Asset?: StandAssetReference | null;
+  tvBaseStickerAsset?: StandAssetReference | null;
   logoFrameHeight?: number;
   logoAsset?: StandAssetReference | null;
   storageOrientation?: "left" | "right"; // Orientation du rangement (ex: tables de démo)

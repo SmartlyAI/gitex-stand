@@ -88,6 +88,24 @@ function FurniturePlanPreview({ element, isSelected }: { element: StandElement; 
     );
   }
 
+  if (element.catalogId === "presentoir_brochures") {
+    return (
+      <div
+        className={`relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-[4px] shadow-sm ${
+          isSelected ? "ring-[3px] ring-blue-500" : ""
+        }`}
+        style={{ backgroundColor: element.color }}
+      >
+        <div className="absolute top-[10%] h-[40%] w-[80%] rounded-[2px] bg-white/20 border border-white/40" />
+        <div className="absolute top-[20%] h-[20%] w-[60%] bg-white/40" />
+        <div className="absolute bottom-[20%] h-[20%] w-[40%] rounded-full bg-black/10" />
+        <span className="pointer-events-none z-10 text-center text-[7px] font-medium leading-none text-white/90 drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
+          Brochures
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded-[4px] px-1 py-1 shadow-sm ${

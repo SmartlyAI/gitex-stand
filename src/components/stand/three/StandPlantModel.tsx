@@ -13,14 +13,21 @@ const LEAF_LAYOUT: Array<{
   scale: [number, number, number];
   toneAmount: number;
 }> = [
-  { position: [0.16, 0.7, 0.02], rotation: [0.22, 0.2, 0.72], scale: [0.12, 0.34, 0.05], toneAmount: 0.08 },
-  { position: [-0.18, 0.72, -0.04], rotation: [-0.18, -0.24, -0.68], scale: [0.12, 0.38, 0.05], toneAmount: -0.04 },
-  { position: [0.08, 0.96, 0.14], rotation: [0.38, 0.56, 0.32], scale: [0.14, 0.46, 0.06], toneAmount: 0.14 },
-  { position: [-0.1, 0.98, 0.12], rotation: [0.34, -0.52, -0.28], scale: [0.13, 0.42, 0.06], toneAmount: 0.02 },
-  { position: [0.2, 1.08, -0.08], rotation: [-0.28, 0.62, 0.24], scale: [0.12, 0.4, 0.05], toneAmount: -0.08 },
-  { position: [-0.22, 1.1, 0.06], rotation: [0.24, -0.58, -0.3], scale: [0.14, 0.44, 0.06], toneAmount: 0.12 },
-  { position: [0.04, 1.26, -0.02], rotation: [0.14, 0.16, 0.08], scale: [0.15, 0.5, 0.07], toneAmount: -0.02 },
-  { position: [-0.04, 1.2, -0.16], rotation: [-0.34, -0.18, -0.12], scale: [0.12, 0.36, 0.05], toneAmount: 0.06 },
+  // Bas
+  { position: [0.2, 0.8, 0.05], rotation: [0.22, 0.2, 0.72], scale: [0.16, 0.45, 0.04], toneAmount: 0.08 },
+  { position: [-0.22, 0.85, -0.08], rotation: [-0.18, -0.24, -0.68], scale: [0.18, 0.5, 0.04], toneAmount: -0.04 },
+  { position: [0.05, 0.75, 0.2], rotation: [0.6, 0.1, 0.1], scale: [0.15, 0.4, 0.04], toneAmount: 0.1 },
+  // Milieu
+  { position: [0.12, 1.1, 0.18], rotation: [0.38, 0.56, 0.32], scale: [0.14, 0.4, 0.04], toneAmount: 0.14 },
+  { position: [-0.15, 1.15, 0.15], rotation: [0.34, -0.52, -0.28], scale: [0.12, 0.35, 0.04], toneAmount: 0.02 },
+  { position: [0.25, 1.25, -0.12], rotation: [-0.28, 0.62, 0.24], scale: [0.13, 0.38, 0.04], toneAmount: -0.08 },
+  { position: [-0.28, 1.2, 0.08], rotation: [0.24, -0.58, -0.3], scale: [0.15, 0.42, 0.04], toneAmount: 0.12 },
+  { position: [0.05, 1.18, -0.22], rotation: [-0.4, -0.1, -0.1], scale: [0.12, 0.35, 0.04], toneAmount: -0.06 },
+  // Haut
+  { position: [0.06, 1.45, -0.04], rotation: [0.14, 0.16, 0.08], scale: [0.14, 0.45, 0.04], toneAmount: -0.02 },
+  { position: [-0.06, 1.38, -0.2], rotation: [-0.34, -0.18, -0.12], scale: [0.13, 0.38, 0.04], toneAmount: 0.06 },
+  { position: [0.14, 1.4, 0.08], rotation: [0.2, 0.4, 0.3], scale: [0.11, 0.35, 0.04], toneAmount: 0.15 },
+  { position: [-0.12, 1.48, 0.1], rotation: [0.25, -0.3, -0.2], scale: [0.12, 0.4, 0.04], toneAmount: 0.04 },
 ];
 
 export function StandPlantModel({ color, height }: StandPlantModelProps) {
@@ -28,20 +35,29 @@ export function StandPlantModel({ color, height }: StandPlantModelProps) {
   const verticalScale = Math.min(plantHeight / 1.55, 1.22);
 
   return (
-    <group scale={[1, verticalScale, 1]}>
-      <mesh castShadow position={[0, 0.16, 0]} receiveShadow>
-        <cylinderGeometry args={[0.16, 0.19, 0.24, 26]} />
-        <meshStandardMaterial color="#8b5a3c" roughness={0.9} />
-      </mesh>
-      <mesh position={[0, 0.27, 0]} receiveShadow>
-        <cylinderGeometry args={[0.128, 0.128, 0.03, 24]} />
-        <meshStandardMaterial color="#4b2e1f" roughness={0.98} />
-      </mesh>
+    <group scale={[1.1, verticalScale, 1.1]}>
+      {/* Pot plus réaliste et élégant (cylindre légèrement évasé avec rebord) */}
+      <group position={[0, 0.22, 0]}>
+        <mesh castShadow receiveShadow>
+          <cylinderGeometry args={[0.22, 0.16, 0.44, 32]} />
+          <meshStandardMaterial color="#e2e8f0" metalness={0.15} roughness={0.35} />
+        </mesh>
+        {/* Liseré fin en haut du pot */}
+        <mesh castShadow position={[0, 0.21, 0]} receiveShadow>
+          <cylinderGeometry args={[0.23, 0.22, 0.04, 32]} />
+          <meshStandardMaterial color="#cbd5e1" metalness={0.2} roughness={0.3} />
+        </mesh>
+        {/* Terreau */}
+        <mesh position={[0, 0.19, 0]} receiveShadow>
+          <cylinderGeometry args={[0.2, 0.2, 0.02, 28]} />
+          <meshStandardMaterial color="#2c1e16" roughness={0.95} />
+        </mesh>
+      </group>
 
       {[
-        { position: [0, 0.64, 0], rotation: [0.04, 0.12, 0] },
-        { position: [0.08, 0.8, 0.04], rotation: [-0.12, 0.18, 0.16] },
-        { position: [-0.1, 0.78, -0.02], rotation: [0.14, -0.16, -0.12] },
+        { position: [0, 0.74, 0], rotation: [0.04, 0.12, 0] },
+        { position: [0.08, 0.9, 0.04], rotation: [-0.12, 0.18, 0.16] },
+        { position: [-0.1, 0.88, -0.02], rotation: [0.14, -0.16, -0.12] },
       ].map((stem, index) => (
         <mesh
           castShadow

@@ -38,6 +38,54 @@ export function FloorAssetSettings({
   );
 }
 
+export function PartitionTvSettings({
+  element,
+  updateElement,
+}: MiniBarLogoSettingsProps) {
+  if (element.catalogId !== "ecran_pied") {
+    return null;
+  }
+
+  return (
+    <div className="space-y-4 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-3">
+      <div>
+        <h4 className="text-[11px] font-semibold uppercase tracking-wide text-[#475569]">
+          Personnalisation TV
+        </h4>
+      </div>
+
+      <AssetUploadField
+        accept={STAND_ASSET_ACCEPT.tv_screen}
+        asset={element.tvScreen1Asset}
+        description="Image affichée sur le premier écran TV."
+        kind="tv_screen"
+        label="Écran 1"
+        onChange={(asset) => updateElement(element.id, { tvScreen1Asset: asset })}
+      />
+
+      {(element.tvScreenMode === "double") && (
+        <AssetUploadField
+          accept={STAND_ASSET_ACCEPT.tv_screen}
+          asset={element.tvScreen2Asset}
+          description="Image affichée sur le deuxième écran TV."
+          kind="tv_screen"
+          label="Écran 2"
+          onChange={(asset) => updateElement(element.id, { tvScreen2Asset: asset })}
+        />
+      )}
+
+      <AssetUploadField
+        accept={STAND_ASSET_ACCEPT.tv_sticker}
+        asset={element.tvBaseStickerAsset}
+        description="Sticker affiché sur les façades de la cloison."
+        kind="tv_sticker"
+        label="Sticker Façade"
+        onChange={(asset) => updateElement(element.id, { tvBaseStickerAsset: asset })}
+      />
+    </div>
+  );
+}
+
 export function MiniBarLogoSettings({
   element,
   updateElement,

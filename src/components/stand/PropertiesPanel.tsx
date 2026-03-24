@@ -140,7 +140,7 @@ export function PropertiesPanel() {
           }`}
           onClick={() => setActiveTab("stand")}
         >
-          GLOBAL (STAND)
+          STAND
         </button>
         <button
           className={`flex-1 h-11 text-[11px] font-semibold tracking-wide transition-colors ${
@@ -150,7 +150,7 @@ export function PropertiesPanel() {
           }`}
           onClick={() => setActiveTab("element")}
         >
-          LOCAL (ÉLÉMENT)
+          ÉLÉMENT
         </button>
       </div>
 
@@ -416,9 +416,9 @@ export function PropertiesPanel() {
                   </div>
                   <Slider
                     value={selectedElement.width}
-                    min={0.2}
+                    min={0.01}
                     max={5}
-                    step={0.1}
+                    step={0.01}
                     onValueChange={(v: number) => updateElement(selectedElement.id, { width: v })}
                   />
                 </div>
@@ -429,9 +429,9 @@ export function PropertiesPanel() {
                   </div>
                   <Slider
                     value={selectedElement.height}
-                    min={0.2}
+                    min={0.01}
                     max={5}
-                    step={0.1}
+                    step={0.01}
                     onValueChange={(v: number) => updateElement(selectedElement.id, { height: v })}
                   />
                 </div>

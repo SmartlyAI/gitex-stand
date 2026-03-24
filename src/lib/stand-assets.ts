@@ -3,6 +3,8 @@ import { StandAssetKind, StandAssetReference, StandElement, StandFloorSettings }
 export const STAND_ASSET_ACCEPT: Record<StandAssetKind, string> = {
   logo: "image/png,image/jpeg,image/webp,image/svg+xml",
   parquet_texture: "image/png,image/jpeg,image/webp",
+  tv_screen: "image/png,image/jpeg,image/webp",
+  tv_sticker: "image/png,image/jpeg,image/webp,image/svg+xml",
 };
 
 export const STAND_ASSET_MAX_SIZE_BYTES = 8 * 1024 * 1024;
@@ -19,7 +21,7 @@ export function buildStandAssetUrl(assetId: string) {
 }
 
 export function isStandAssetKind(value: string): value is StandAssetKind {
-  return value === "logo" || value === "parquet_texture";
+  return value === "logo" || value === "parquet_texture" || value === "tv_screen" || value === "tv_sticker";
 }
 
 export function isSupportedStandAssetContentType(
@@ -70,6 +72,9 @@ export function normalizeStandElementAssets(element: StandElement): StandElement
         ? element.logoFrameHeight
         : undefined,
     logoAsset: normalizeAssetReference(element.logoAsset, "logo"),
+    tvScreen1Asset: normalizeAssetReference(element.tvScreen1Asset, "tv_screen"),
+    tvScreen2Asset: normalizeAssetReference(element.tvScreen2Asset, "tv_screen"),
+    tvBaseStickerAsset: normalizeAssetReference(element.tvBaseStickerAsset, "tv_sticker"),
   };
 }
 

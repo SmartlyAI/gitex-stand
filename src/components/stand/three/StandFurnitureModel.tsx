@@ -8,6 +8,7 @@ import { StandElement } from "@/lib/types";
 import { StandPlantModel } from "./StandPlantModel";
 import { MiniBarLogoCrown as MiniBarLogoCrownModel } from "./MiniBarLogoCrown";
 import { getElementFootprint, getElementHeight, tone } from "./model-utils";
+import { AssetPlane } from "./AssetPlane";
 
 interface StandFurnitureModelProps {
   element: StandElement;
@@ -207,6 +208,24 @@ function PartitionTv({ color, depth, element, height, width }: { color: string; 
       <RoundedBox args={[width, panelHeight, panelThickness]} castShadow position={[0, panelHeight / 2, 0]} radius={0.03} receiveShadow smoothness={4}>
         <meshStandardMaterial color={color} metalness={0.08} roughness={0.4} />
       </RoundedBox>
+      
+      {/* Sticker Façade Avant */}
+      {element.tvBaseStickerAsset && (
+        <mesh position={[0, panelHeight / 2, panelThickness / 2 + 0.002]}>
+          <planeGeometry args={[width * 0.96, panelHeight * 0.98]} />
+          <meshStandardMaterial color="#ffffff" map={null} />
+          <AssetPlane asset={element.tvBaseStickerAsset} height={panelHeight * 0.98} width={width * 0.96} />
+        </mesh>
+      )}
+      
+      {/* Sticker Façade Arrière */}
+      {element.tvBaseStickerAsset && (
+        <mesh position={[0, panelHeight / 2, -panelThickness / 2 - 0.002]} rotation={[0, Math.PI, 0]}>
+          <planeGeometry args={[width * 0.96, panelHeight * 0.98]} />
+          <meshStandardMaterial color="#ffffff" map={null} />
+          <AssetPlane asset={element.tvBaseStickerAsset} height={panelHeight * 0.98} width={width * 0.96} />
+        </mesh>
+      )}
 
       {(tvMode === "single" || tvMode === "double") && (
         <group position={[0, screen1CenterY, panelThickness / 2 + 0.015]}>
@@ -218,6 +237,12 @@ function PartitionTv({ color, depth, element, height, width }: { color: string; 
             <planeGeometry args={[tv1Width * 0.96, tv1Height * 0.92]} />
             <meshStandardMaterial color="#000000" metalness={0.8} roughness={0.2} />
           </mesh>
+          {/* Écran 1 Asset */}
+          {element.tvScreen1Asset && (
+            <group position={[0, 0, 0.017]}>
+              <AssetPlane asset={element.tvScreen1Asset} height={tv1Height * 0.92} width={tv1Width * 0.96} preserveAspectRatio={false} />
+            </group>
+          )}
         </group>
       )}
 
@@ -231,6 +256,12 @@ function PartitionTv({ color, depth, element, height, width }: { color: string; 
             <planeGeometry args={[tv2Width * 0.96, tv2Height * 0.92]} />
             <meshStandardMaterial color="#000000" metalness={0.8} roughness={0.2} />
           </mesh>
+          {/* Écran 2 Asset */}
+          {element.tvScreen2Asset && (
+            <group position={[0, 0, 0.017]}>
+              <AssetPlane asset={element.tvScreen2Asset} height={tv2Height * 0.92} width={tv2Width * 0.96} preserveAspectRatio={false} />
+            </group>
+          )}
         </group>
       )}
 
@@ -402,6 +433,40 @@ function FurnitureBody({ color, depth, element, height, width }: { color: string
         <RoundedBox args={[width, Math.max(height, 0.025), depth]} castShadow position={[0, Math.max(height, 0.025) / 2, 0]} radius={0.025} receiveShadow smoothness={4}>
           <meshStandardMaterial color={tone(color, 0.04)} roughness={0.94} />
         </RoundedBox>
+      );
+    case "presentoir_brochures":
+      return (
+        <>
+          {/* Base */}
+          <RoundedBox args={[width, 0.02, depth]} castShadow position={[0, 0.01, 0]} radius={0.005} receiveShadow smoothness={4}>
+            <meshStandardMaterial color={tone(color, -0.1)} metalness={0.2} roughness={0.4} />
+          </RoundedBox>
+          
+          {/* Pied central profilé */}
+          <mesh castShadow position={[0, height / 2, 0]} receiveShadow>
+            <boxGeometry args={[0.06, height, 0.04]} />
+            <meshStandardMaterial color={tone(color, -0.2)} metalness={0.3} roughness={0.5} />
+          </mesh>
+
+          {/* Bac incliné pour prospectus */}
+          <group position={[0, height - 0.1, 0.02]} rotation={[0.4, 0, 0]}>
+            {/* Fond du bac */}
+            <RoundedBox args={[width * 0.9, 0.25, 0.02]} castShadow receiveShadow radius={0.005}>
+              <meshStandardMaterial color={color} metalness={0.1} roughness={0.3} />
+            </RoundedBox>
+            
+            {/* Rebord inférieur du bac pour retenir les documents */}
+            <RoundedBox args={[width * 0.9, 0.02, 0.05]} castShadow position={[0, -0.115, 0.015]} radius={0.005} receiveShadow>
+              <meshStandardMaterial color={tone(color, -0.1)} metalness={0.2} roughness={0.4} />
+            </RoundedBox>
+            
+            {/* Prospectus suggérés (liasses de papier) */}
+            <mesh castShadow position={[0, -0.02, 0.015]} receiveShadow>
+              <boxGeometry args={[width * 0.7, 0.18, 0.01]} />
+              <meshStandardMaterial color="#f8fafc" roughness={0.9} />
+            </mesh>
+          </group>
+        </>
       );
     default:
       if (element.category === "texte") {

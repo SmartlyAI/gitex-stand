@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { ContactShadows, Line, OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { ThreeEvent } from "@react-three/fiber";
+import * as THREE from "three";
 import { getStandFloorPalette, getStandPlatformMetrics } from "@/lib/stand-floor";
 import { StandDimensions, StandElement, StandFloorSettings } from "@/lib/types";
 import { AssetPlane } from "./AssetPlane";

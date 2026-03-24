@@ -51,6 +51,7 @@ export interface StandElement {
   tvScreen2CenterY?: number;
   logoFrameHeight?: number;
   logoAsset?: StandAssetReference | null;
+  storageOrientation?: "left" | "right"; // Orientation du rangement (ex: tables de démo)
 }
 
 export interface StandDimensions {
@@ -65,6 +66,7 @@ export interface StandFloorSettings {
   color: string;
   elevation: number;
   textureAsset?: StandAssetReference | null;
+  ledColor?: string;
 }
 
 export type StandViewMode = "2d" | "3d";

@@ -206,6 +206,23 @@ export function PropertiesPanel() {
             </div>
 
             <div>
+              <Label className="text-[11px] text-[#64748b]">Couleur LED (Contour)</Label>
+              <div className="mt-1 flex items-center gap-2">
+                <input
+                  type="color"
+                  value={floorSettings.ledColor ?? "#a855f7"}
+                  onChange={(e) => updateFloorSettings({ ledColor: e.target.value })}
+                  className="h-7 w-7 rounded-md border border-[#e2e8f0] p-0.5"
+                />
+                <Input
+                  value={floorSettings.ledColor ?? "#a855f7"}
+                  onChange={(e) => updateFloorSettings({ ledColor: e.target.value })}
+                  className="h-7 flex-1 border-[#e2e8f0] bg-white font-mono text-[12px]"
+                />
+              </div>
+            </div>
+
+            <div>
               <div className="flex items-center justify-between mb-1">
                 <Label className="text-[11px] text-[#64748b]">Surélévation</Label>
                 <span className="text-[10px] font-semibold text-[#1e293b]">
@@ -496,6 +513,37 @@ export function PropertiesPanel() {
               element={selectedElement}
               updateElement={updateElement}
             />
+
+            {/* Rangement Table de Démo */}
+            {selectedElement.catalogId === "table_demo" && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="text-[11px] text-[#64748b]">Rangement</Label>
+                </div>
+                <div className="flex items-center rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-0.5">
+                  <button
+                    className={`h-7 flex-1 rounded-md text-[11px] font-medium transition-colors ${
+                      (!selectedElement.storageOrientation || selectedElement.storageOrientation === "right")
+                        ? "bg-white text-[#1e293b] shadow-sm"
+                        : "text-[#64748b] hover:text-[#1e293b]"
+                    }`}
+                    onClick={() => updateElement(selectedElement.id, { storageOrientation: "right" })}
+                  >
+                    À droite
+                  </button>
+                  <button
+                    className={`h-7 flex-1 rounded-md text-[11px] font-medium transition-colors ${
+                      selectedElement.storageOrientation === "left"
+                        ? "bg-white text-[#1e293b] shadow-sm"
+                        : "text-[#64748b] hover:text-[#1e293b]"
+                    }`}
+                    onClick={() => updateElement(selectedElement.id, { storageOrientation: "left" })}
+                  >
+                    À gauche
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Rotation */}
             <div>

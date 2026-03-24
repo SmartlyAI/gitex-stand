@@ -8,6 +8,7 @@ import { StandElement } from "@/lib/types";
 import { StandPlantModel } from "./StandPlantModel";
 import { MiniBarLogoCrown as MiniBarLogoCrownModel } from "./MiniBarLogoCrown";
 import { getElementFootprint, getElementHeight, tone } from "./model-utils";
+import { useStandStore } from "@/lib/store";
 
 interface StandFurnitureModelProps {
   element: StandElement;
@@ -97,58 +98,39 @@ function Stool({ depth, height, width }: { depth: number; height: number; width:
   );
 }
 
-function DemoTable({ color, depth, height, width }: { color: string; depth: number; height: number; width: number }) {
-  const topThickness = 0.06;
-  const panelThickness = 0.055;
-  const bodyHeight = height - topThickness;
-  const openingWidth = width * 0.6;
-  const supportWidth = panelThickness;
-  const storageWidth = Math.max(width - openingWidth - supportWidth, 0.18);
-  const supportX = -width / 2 + supportWidth / 2;
-  const storageX = width / 2 - storageWidth / 2;
-  const bodyCenterY = bodyHeight / 2;
-  const doorWidth = Math.max(storageWidth - 0.05, 0.18);
-  const doorHeight = Math.max(bodyHeight - 0.08, 0.24);
-  const lockX = storageX + storageWidth * 0.28;
+function DemoTable({ color, depth, height, width, storageOrientation = "right" }: { color: string; depth: number; height: number; width: number; storageOrientation?: "left" | "right" }) {
+  const tableHeight = Math.max(height, 0.9);
+  const supportThickness = Math.min(width, depth) * 0.15;
+  const storageWidth = width * 0.35;
+
+  // Base configuration assumes storage on the right
+  let supportX = -width / 2 + supportThickness / 2 + 0.05;
+  let storageX = width / 2 - storageWidth / 2 - 0.02;
+
+  // Flip if orientation is left
+  if (storageOrientation === "left") {
+    supportX = width / 2 - supportThickness / 2 - 0.05;
+    storageX = -width / 2 + storageWidth / 2 + 0.02;
+  }
 
   return (
     <>
-      <RoundedBox args={[width, topThickness, depth]} castShadow position={[0, height - topThickness / 2, 0]} radius={0.018} receiveShadow smoothness={4}>
-        <meshStandardMaterial color="#f8fafc" metalness={0.03} roughness={0.38} />
+      <RoundedBox args={[width, 0.08, depth]} castShadow position={[0, tableHeight - 0.04, 0]} radius={0.03} receiveShadow smoothness={4}>
+        <meshStandardMaterial color={tone(color, 0.16)} roughness={0.4} />
       </RoundedBox>
-
-      <mesh castShadow position={[supportX, bodyCenterY, 0]} receiveShadow>
-        <boxGeometry args={[supportWidth, bodyHeight, depth]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.82} />
+      <mesh castShadow position={[supportX, tableHeight / 2 - 0.04, 0]} receiveShadow>
+        <boxGeometry args={[supportThickness, tableHeight - 0.08, depth * 0.7]} />
+        <meshStandardMaterial color={tone(color, -0.06)} roughness={0.65} />
       </mesh>
-
-      <mesh castShadow position={[storageX, bodyCenterY, 0]} receiveShadow>
-        <boxGeometry args={[storageWidth, bodyHeight, depth]} />
-        <meshStandardMaterial color={tone(color, 0.04)} roughness={0.5} />
-      </mesh>
-
-      <mesh castShadow position={[storageX, bodyCenterY, depth / 2 - panelThickness / 2]} receiveShadow>
-        <boxGeometry args={[doorWidth, doorHeight, panelThickness]} />
-        <meshStandardMaterial color={tone(color, 0.1)} roughness={0.42} />
-      </mesh>
-      <mesh castShadow position={[lockX, bodyCenterY, depth / 2 + 0.004]} receiveShadow>
-        <boxGeometry args={[0.012, bodyHeight * 0.2, 0.014]} />
-        <meshStandardMaterial color="#cbd5e1" metalness={0.24} roughness={0.36} />
-      </mesh>
-
-      <mesh castShadow position={[storageX, 0.03, 0]} receiveShadow>
-        <boxGeometry args={[storageWidth, 0.06, depth]} />
-        <meshStandardMaterial color="#d1d5db" roughness={0.8} />
-      </mesh>
-      <mesh castShadow position={[supportX, 0.03, 0]} receiveShadow>
-        <boxGeometry args={[supportWidth, 0.06, depth]} />
-        <meshStandardMaterial color="#d1d5db" roughness={0.8} />
+      <mesh castShadow position={[storageX, tableHeight / 2 - 0.04, 0]} receiveShadow>
+        <boxGeometry args={[storageWidth, tableHeight - 0.08, depth * 0.8]} />
+        <meshStandardMaterial color={tone(color, -0.12)} roughness={0.7} />
       </mesh>
     </>
   );
 }
 
-function MiniBarLogoCrown({ color, depth, element, height, width }: { color: string; depth: number; element: StandElement; height: number; width: number }) {
+function MiniBarLogoCrown({ color, depth, element, height, width, ledColor }: { color: string; depth: number; element: StandElement; height: number; width: number; ledColor: string }) {
   return (
     <MiniBarLogoCrownModel
       color={color}
@@ -156,6 +138,7 @@ function MiniBarLogoCrown({ color, depth, element, height, width }: { color: str
       element={element}
       height={height}
       width={width}
+      ledColor={ledColor}
     />
   );
 }
@@ -276,6 +259,9 @@ function TextSign({ color, depth, element, height, width }: { color: string; dep
 }
 
 function FurnitureBody({ color, depth, element, height, width }: { color: string; depth: number; element: StandElement; height: number; width: number }) {
+  const { floorSettings } = useStandStore();
+  const ledColor = floorSettings.ledColor ?? "#a855f7";
+
   switch (element.catalogId) {
     case "bar_central":
     case "comptoir_accueil":
@@ -295,7 +281,7 @@ function FurnitureBody({ color, depth, element, height, width }: { color: string
         </>
       );
     case "mini_bar_couronne_logo":
-      return <MiniBarLogoCrown color={color} depth={depth} element={element} height={height} width={width} />;
+      return <MiniBarLogoCrown color={color} depth={depth} element={element} height={height} width={width} ledColor={ledColor} />;
     case "canape":
       return (
         <>
@@ -340,7 +326,7 @@ function FurnitureBody({ color, depth, element, height, width }: { color: string
         </mesh>
       );
     case "table_demo":
-      return <DemoTable color={color} depth={depth} height={height} width={width} />;
+      return <DemoTable color={color} depth={depth} height={height} width={width} storageOrientation={element.storageOrientation} />;
     case "table_haute":
       return (
         <>

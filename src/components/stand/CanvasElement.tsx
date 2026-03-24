@@ -35,8 +35,17 @@ function FurniturePlanPreview({ element, isSelected }: { element: StandElement; 
         }}
       >
         <div className="absolute inset-[12%] rounded-[6px] border-2 border-white/70" />
-        <div className="absolute inset-x-[18%] inset-y-[26%] rounded-[999px] border border-white/55 bg-[#4b2e1c]/30" />
-        <div className="absolute inset-x-[24%] inset-y-[32%] rounded-[999px] border border-white/35 bg-black/10" />
+        
+        {/* Forme en U du comptoir (avec passage démontable arrière) */}
+        <div className="absolute inset-x-[18%] bottom-[12%] top-[24%] rounded-[8px] border border-white/50 bg-[#4b2e1c]/22" />
+        <div className="absolute inset-x-[26%] bottom-[20%] top-[32%] rounded-[4px] border border-white/35 bg-[#0f172a]/16" />
+        {/* Ligne indiquant la séparation de la planche démontable */}
+        <div className="absolute left-1/2 bottom-[12%] h-[8%] w-[16%] -translate-x-1/2 border-x border-white/40 bg-white/5" />
+        
+        {/* Etagere et machine à café */}
+        <div className="absolute left-1/2 top-[38%] h-[12%] w-[14%] -translate-x-1/2 rounded-[3px] border border-white/30 bg-[#9ca3af]" />
+        <div className="absolute left-1/2 top-[40%] h-[4%] w-[8%] -translate-x-1/2 rounded-[2px] bg-[#334155]" />
+
         <div className="absolute left-[14%] top-[14%] h-[10%] w-[10%] rounded-[3px] bg-white/80" />
         <div className="absolute right-[14%] top-[14%] h-[10%] w-[10%] rounded-[3px] bg-white/80" />
         <div className="absolute bottom-[14%] left-[14%] h-[10%] w-[10%] rounded-[3px] bg-white/80" />
@@ -57,9 +66,31 @@ function FurniturePlanPreview({ element, isSelected }: { element: StandElement; 
     );
   }
 
+  if (element.catalogId === "table_demo") {
+    const isLeft = element.storageOrientation === "left";
+    return (
+      <div
+        className={`relative flex h-full w-full overflow-hidden rounded-[4px] px-1 py-1 shadow-sm ${
+          isSelected ? "ring-[3px] ring-blue-500" : ""
+        }`}
+        style={{ backgroundColor: element.color }}
+      >
+        {/* Zone de rangement */}
+        <div 
+          className={`absolute top-0 bottom-0 w-[35%] bg-black/15 ${isLeft ? "left-0 border-r border-white/20" : "right-0 border-l border-white/20"}`} 
+        />
+        <div className="absolute inset-0 flex items-center justify-center p-1">
+          <span className="pointer-events-none text-center text-[8px] font-medium leading-none text-white/85 drop-shadow-[0_1px_1px_rgba(0,0,0,0.35)]">
+            {element.name}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
-      className={`relative flex h-full w-full items-end justify-center overflow-hidden rounded-[4px] px-1 py-1 shadow-sm ${
+      className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded-[4px] px-1 py-1 shadow-sm ${
         isSelected ? "ring-[3px] ring-blue-500" : ""
       }`}
       style={{

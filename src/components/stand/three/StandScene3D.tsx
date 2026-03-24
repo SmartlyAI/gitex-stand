@@ -154,7 +154,7 @@ export function StandScene3D({
   const cameraPosition: [number, number, number] = [
     dimensions.width / 2 + maxSide * 0.45,
     maxSide * 0.62 + floorTopY * 0.6,
-    dimensions.depth + maxSide * 0.72,
+    -maxSide * 0.72, // Z négatif pour regarder vers le sud (le haut du plan est à Z=0)
   ];
 
   return (

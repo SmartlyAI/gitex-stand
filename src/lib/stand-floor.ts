@@ -7,6 +7,7 @@ export const DEFAULT_STAND_FLOOR_SETTINGS: StandFloorSettings = {
   color: "#f8fafc",
   elevation: 0,
   textureAsset: null,
+  ledColor: "#a855f7", // Valeur par défaut de la LED
 };
 
 export const STAND_FLOOR_FINISHES: Array<{
@@ -74,6 +75,7 @@ export function normalizeStandFloorSettings(
       0.3
     ),
     textureAsset: settings?.textureAsset ?? DEFAULT_STAND_FLOOR_SETTINGS.textureAsset,
+    ledColor: settings?.ledColor ?? DEFAULT_STAND_FLOOR_SETTINGS.ledColor,
   });
 }
 

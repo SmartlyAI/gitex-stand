@@ -26,7 +26,7 @@ export function StandEditor({
   readOnly = false,
 }: StandEditorProps) {
   const [shareOpen, setShareOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<StandViewMode>("2d");
+  const [viewMode, setViewMode] = useState<StandViewMode>(readOnly ? "3d" : "2d");
   const didHydrateRef = useRef(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -99,9 +99,29 @@ export function StandEditor({
         onViewModeChange={setViewMode}
       />
       <div className="flex flex-1 overflow-hidden">
-        <FurnitureSidebar />
-        {viewMode === "2d" ? <Canvas /> : <StandPreview3DCanvas />}
-        <PropertiesPanel />
+        {!isReadOnly && <FurnitureSidebar />}
+        <main className="flex-1 bg-[#f8f9fb] relative flex flex-col h-full overflow-hidden">
+          {viewMode === "2d" ? (
+            <Canvas />
+          ) : (
+            <StandPreview3DCanvas 
+              isReadOnly={isReadOnly} 
+              onZoomIn={() => {
+                const event = new CustomEvent("zoom-3d-in");
+                window.dispatchEvent(event);
+              }}
+              onZoomOut={() => {
+                const event = new CustomEvent("zoom-3d-out");
+                window.dispatchEvent(event);
+              }}
+              onZoomReset={() => {
+                const event = new CustomEvent("zoom-3d-reset");
+                window.dispatchEvent(event);
+              }}
+            />
+          )}
+        </main>
+        {!isReadOnly && <PropertiesPanel />}
       </div>
       <ShareModal open={shareOpen} onOpenChange={setShareOpen} />
     </div>

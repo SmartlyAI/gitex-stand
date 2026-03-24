@@ -28,7 +28,7 @@ export function ShareModal({ open, onOpenChange }: ShareModalProps) {
   const shareUrl = useMemo(() => {
     const base =
       typeof window !== "undefined" ? window.location.origin : "";
-    return `${base}${buildPlanPath(planId, mode)}`;
+    return `${base}${buildPlanPath(planId, mode === "editor" ? "editor" : undefined)}`;
   }, [planId, mode]);
 
   const handleCopy = async () => {

@@ -10,7 +10,12 @@ interface PlanPageProps {
 export default async function PlanPage(props: PlanPageProps) {
   const { planId } = await props.params;
   const searchParams = await props.searchParams;
-  const mode = searchParams.mode === "editor" ? "editor" : "readonly";
+  
+  // Par défaut c'est un viewer si rien n'est spécifié,
+  // ou si c'est explicitement mode=readonly.
+  // Pour être éditeur, il faut que mode=editor soit présent.
+  const isEditor = searchParams.mode === "editor";
+  const mode = isEditor ? "editor" : "readonly";
 
   const plan = await getPlanById(planId);
 

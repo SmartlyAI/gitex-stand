@@ -107,6 +107,7 @@ function StandShell({ depth, floorSettings, width }: { depth: number; floorSetti
           <AssetPlane
             asset={floorSettings.textureAsset}
             height={depth}
+            preserveAspectRatio={false}
             repeatX={Math.max(width / 1.6, 1)}
             repeatY={Math.max(depth / 1.6, 1)}
             tone="#ffffff"

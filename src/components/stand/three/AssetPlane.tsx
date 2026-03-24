@@ -8,6 +8,7 @@ import { StandAssetReference } from "@/lib/types";
 interface AssetPlaneProps {
   asset: StandAssetReference | null | undefined;
   height: number;
+  preserveAspectRatio?: boolean;
   repeatX?: number;
   repeatY?: number;
   tone?: string;
@@ -25,6 +26,7 @@ function configureTexture(texture: Texture, repeatX: number, repeatY: number) {
 export function AssetPlane({
   asset,
   height,
+  preserveAspectRatio = true,
   repeatX = 1,
   repeatY = 1,
   tone = "#ffffff",
@@ -45,7 +47,7 @@ export function AssetPlane({
     const sourceWidth = image?.width ?? image?.videoWidth ?? 1;
     const sourceHeight = image?.height ?? image?.videoHeight ?? 1;
 
-    if (!asset || sourceWidth <= 0 || sourceHeight <= 0) {
+    if (!preserveAspectRatio || !asset || sourceWidth <= 0 || sourceHeight <= 0) {
       return { height, width };
     }
 
@@ -63,7 +65,7 @@ export function AssetPlane({
       height,
       width: height * sourceRatio,
     };
-  }, [asset, height, texture.image, width]);
+  }, [asset, height, preserveAspectRatio, texture.image, width]);
 
   useEffect(() => {
     configureTexture(texture, repeatX, repeatY);

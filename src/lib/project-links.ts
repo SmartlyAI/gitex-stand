@@ -1,3 +1,4 @@
+import { DEFAULT_STAND_FLOOR_SETTINGS } from "@/lib/stand-floor";
 import { StandPlan } from "@/lib/types";
 
 export interface StoredProjectLink {
@@ -24,6 +25,7 @@ export function createEmptyPlan(
     planId,
     planName,
     dimensions: { width: 6, depth: 5 },
+    floorSettings: { ...DEFAULT_STAND_FLOOR_SETTINGS },
     elements: [],
     history: [],
     historyIndex: -1,

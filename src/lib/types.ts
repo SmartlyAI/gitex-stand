@@ -46,17 +46,27 @@ export interface StandDimensions {
   depth: number; // in meters
 }
 
+export type StandFloorFinish = "sol_uni" | "moquette" | "parquet";
+
+export interface StandFloorSettings {
+  finish: StandFloorFinish;
+  color: string;
+  elevation: number;
+}
+
 export type StandViewMode = "2d" | "3d";
 
 export interface HistoryEntry {
   elements: StandElement[];
   dimensions: StandDimensions;
+  floorSettings: StandFloorSettings;
 }
 
 export interface StandPlan {
   planId: string;
   planName: string;
   dimensions: StandDimensions;
+  floorSettings: StandFloorSettings;
   elements: StandElement[];
   history: HistoryEntry[];
   historyIndex: number;

@@ -5,6 +5,7 @@ import { Edges, RoundedBox } from "@react-three/drei";
 import { ThreeEvent } from "@react-three/fiber";
 import { DoubleSide } from "three";
 import { StandElement } from "@/lib/types";
+import { StandPlantModel } from "./StandPlantModel";
 import { getElementFootprint, getElementHeight, tone } from "./model-utils";
 
 interface StandFurnitureModelProps {
@@ -99,13 +100,14 @@ function DemoTable({ color, depth, height, width }: { color: string; depth: numb
   const topThickness = 0.06;
   const panelThickness = 0.055;
   const bodyHeight = height - topThickness;
-  const storageWidth = Math.max(width * 0.4, 0.24);
-  const storageHeight = bodyHeight;
-  const storageDepth = Math.max(depth - panelThickness * 0.8, 0.3);
+  const openingWidth = width * 0.6;
+  const supportWidth = panelThickness;
+  const storageWidth = Math.max(width - openingWidth - supportWidth, 0.18);
+  const supportX = -width / 2 + supportWidth / 2;
   const storageX = width / 2 - storageWidth / 2;
-  const storageY = storageHeight / 2;
+  const bodyCenterY = bodyHeight / 2;
   const doorWidth = Math.max(storageWidth - 0.05, 0.18);
-  const doorHeight = Math.max(storageHeight - 0.08, 0.24);
+  const doorHeight = Math.max(bodyHeight - 0.08, 0.24);
   const lockX = storageX + storageWidth * 0.28;
 
   return (
@@ -114,22 +116,31 @@ function DemoTable({ color, depth, height, width }: { color: string; depth: numb
         <meshStandardMaterial color="#f8fafc" metalness={0.03} roughness={0.38} />
       </RoundedBox>
 
-      <mesh castShadow position={[storageX, storageY, 0]} receiveShadow>
-        <boxGeometry args={[storageWidth, storageHeight, storageDepth]} />
+      <mesh castShadow position={[supportX, bodyCenterY, 0]} receiveShadow>
+        <boxGeometry args={[supportWidth, bodyHeight, depth]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.82} />
+      </mesh>
+
+      <mesh castShadow position={[storageX, bodyCenterY, 0]} receiveShadow>
+        <boxGeometry args={[storageWidth, bodyHeight, depth]} />
         <meshStandardMaterial color={tone(color, 0.04)} roughness={0.5} />
       </mesh>
 
-      <mesh castShadow position={[storageX, storageY, depth / 2 - panelThickness / 2]} receiveShadow>
+      <mesh castShadow position={[storageX, bodyCenterY, depth / 2 - panelThickness / 2]} receiveShadow>
         <boxGeometry args={[doorWidth, doorHeight, panelThickness]} />
         <meshStandardMaterial color={tone(color, 0.1)} roughness={0.42} />
       </mesh>
-      <mesh castShadow position={[lockX, storageY, depth / 2 + 0.004]} receiveShadow>
+      <mesh castShadow position={[lockX, bodyCenterY, depth / 2 + 0.004]} receiveShadow>
         <boxGeometry args={[0.012, bodyHeight * 0.2, 0.014]} />
         <meshStandardMaterial color="#cbd5e1" metalness={0.24} roughness={0.36} />
       </mesh>
 
       <mesh castShadow position={[storageX, 0.03, 0]} receiveShadow>
-        <boxGeometry args={[storageWidth, 0.06, storageDepth]} />
+        <boxGeometry args={[storageWidth, 0.06, depth]} />
+        <meshStandardMaterial color="#d1d5db" roughness={0.8} />
+      </mesh>
+      <mesh castShadow position={[supportX, 0.03, 0]} receiveShadow>
+        <boxGeometry args={[supportWidth, 0.06, depth]} />
         <meshStandardMaterial color="#d1d5db" roughness={0.8} />
       </mesh>
     </>
@@ -224,26 +235,7 @@ function PartitionTv({ color, depth, element, height, width }: { color: string; 
 }
 
 function Plant({ color, height }: { color: string; height: number }) {
-  return (
-    <>
-      <mesh castShadow position={[0, 0.18, 0]} receiveShadow>
-        <cylinderGeometry args={[0.14, 0.18, 0.28, 24]} />
-        <meshStandardMaterial color="#7c2d12" roughness={0.88} />
-      </mesh>
-      <mesh castShadow position={[0, 0.62, 0]}>
-        <sphereGeometry args={[0.34, 28, 28]} />
-        <meshStandardMaterial color={tone(color, -0.06)} roughness={0.85} />
-      </mesh>
-      <mesh castShadow position={[0.22, Math.min(height - 0.2, 0.98), 0.06]}>
-        <sphereGeometry args={[0.2, 24, 24]} />
-        <meshStandardMaterial color={tone(color, 0.12)} roughness={0.8} />
-      </mesh>
-      <mesh castShadow position={[-0.2, Math.min(height - 0.22, 0.96), -0.08]}>
-        <sphereGeometry args={[0.22, 24, 24]} />
-        <meshStandardMaterial color={tone(color, 0.02)} roughness={0.82} />
-      </mesh>
-    </>
-  );
+  return <StandPlantModel color={color} height={height} />;
 }
 
 function TextSign({ color, depth, element, height, width }: { color: string; depth: number; element: StandElement; height: number; width: number }) {

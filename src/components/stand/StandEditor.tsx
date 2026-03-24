@@ -33,6 +33,7 @@ export function StandEditor({
   const planId = useStandStore((s) => s.planId);
   const planName = useStandStore((s) => s.planName);
   const dimensions = useStandStore((s) => s.dimensions);
+  const floorSettings = useStandStore((s) => s.floorSettings);
   const elements = useStandStore((s) => s.elements);
   const history = useStandStore((s) => s.history);
   const historyIndex = useStandStore((s) => s.historyIndex);
@@ -70,7 +71,7 @@ export function StandEditor({
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [dimensions, elements, history, historyIndex, isReadOnly, planId, planName]);
+  }, [dimensions, elements, floorSettings, history, historyIndex, isReadOnly, planId, planName]);
 
   useEffect(() => {
     if (!planId || !planName) {

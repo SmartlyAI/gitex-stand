@@ -3,11 +3,13 @@
 import { useMemo } from "react";
 import { ContactShadows, Line, OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { ThreeEvent } from "@react-three/fiber";
-import { StandDimensions, StandElement } from "@/lib/types";
+import { getStandFloorPalette, getStandPlatformMetrics } from "@/lib/stand-floor";
+import { StandDimensions, StandElement, StandFloorSettings } from "@/lib/types";
 import { StandFurnitureModel } from "./StandFurnitureModel";
 
 interface StandScene3DProps {
   dimensions: StandDimensions;
+  floorSettings: StandFloorSettings;
   elements: StandElement[];
   gridSize: number;
   selectedElementIds: string[];
@@ -15,7 +17,7 @@ interface StandScene3DProps {
   onSelectElement: (event: ThreeEvent<MouseEvent>, elementId: string) => void;
 }
 
-function FloorGrid({ depth, gridSize, showGrid, width }: { depth: number; gridSize: number; showGrid: boolean; width: number }) {
+function FloorGrid({ depth, gridSize, showGrid, topY, width }: { depth: number; gridSize: number; showGrid: boolean; topY: number; width: number }) {
   const lines = useMemo(() => {
     if (!showGrid) {
       return [];
@@ -28,8 +30,8 @@ function FloorGrid({ depth, gridSize, showGrid, width }: { depth: number; gridSi
       nextLines.push({
         key: `vx-${x.toFixed(2)}`,
         points: [
-          [x, 0.012, 0],
-          [x, 0.012, depth],
+          [x, topY + 0.002, 0],
+          [x, topY + 0.002, depth],
         ],
       });
     }
@@ -38,14 +40,14 @@ function FloorGrid({ depth, gridSize, showGrid, width }: { depth: number; gridSi
       nextLines.push({
         key: `hz-${z.toFixed(2)}`,
         points: [
-          [0, 0.012, z],
-          [width, 0.012, z],
+          [0, topY + 0.002, z],
+          [width, topY + 0.002, z],
         ],
       });
     }
 
     return nextLines;
-  }, [depth, gridSize, showGrid, width]);
+  }, [depth, gridSize, showGrid, topY, width]);
 
   if (!showGrid) {
     return null;
@@ -60,24 +62,67 @@ function FloorGrid({ depth, gridSize, showGrid, width }: { depth: number; gridSi
   );
 }
 
-function StandShell({ depth, width }: { depth: number; width: number }) {
+function StandShell({ depth, floorSettings, width }: { depth: number; floorSettings: StandFloorSettings; width: number }) {
+  const { thickness, topY } = getStandPlatformMetrics(floorSettings);
+  const palette = getStandFloorPalette(floorSettings);
+  const plankLines = useMemo(() => {
+    if (floorSettings.finish !== "parquet") {
+      return [] as Array<{ key: string; points: [number, number, number][] }>;
+    }
+
+    const verticals: Array<{ key: string; points: [number, number, number][] }> = [];
+    for (let x = 0.18; x < width; x += 0.18) {
+      verticals.push({
+        key: `plank-v-${x.toFixed(2)}`,
+        points: [
+          [x, topY + 0.003, 0],
+          [x, topY + 0.003, depth],
+        ],
+      });
+    }
+
+    for (let z = 0.9; z < depth; z += 0.9) {
+      verticals.push({
+        key: `plank-h-${z.toFixed(2)}`,
+        points: [
+          [0, topY + 0.003, z],
+          [width, topY + 0.003, z],
+        ],
+      });
+    }
+
+    return verticals;
+  }, [depth, floorSettings.finish, topY, width]);
+
   return (
     <group>
-      <mesh name="stand-floor" position={[width / 2, 0, depth / 2]} receiveShadow>
-        <boxGeometry args={[width, 0.04, depth]} />
-        <meshStandardMaterial color="#f8fafc" metalness={0.04} roughness={0.88} />
+      <mesh name="stand-floor" position={[width / 2, topY - thickness / 2, depth / 2]} receiveShadow>
+        <boxGeometry args={[width, thickness, depth]} />
+        <meshStandardMaterial color={palette.surfaceColor} metalness={floorSettings.finish === "parquet" ? 0.08 : 0.04} roughness={palette.roughness} />
       </mesh>
 
-      <mesh position={[width / 2, 0.03, depth + 0.045]}>
+      <mesh position={[width / 2, topY - 0.03, depth + 0.045]}>
         <boxGeometry args={[width, 0.06, 0.03]} />
-        <meshStandardMaterial color="#d97706" metalness={0.1} roughness={0.42} />
+        <meshStandardMaterial color={palette.trimColor} metalness={0.1} roughness={0.42} />
       </mesh>
+
+      {floorSettings.finish === "moquette" && (
+        <mesh position={[width / 2, topY + 0.002, depth / 2]} receiveShadow>
+          <boxGeometry args={[width * 0.995, 0.004, depth * 0.995]} />
+          <meshStandardMaterial color={palette.sheenColor} roughness={1} />
+        </mesh>
+      )}
+
+      {plankLines.map((line) => (
+        <Line color={palette.edgeColor} key={line.key} lineWidth={0.5} points={line.points} transparent opacity={0.38} />
+      ))}
     </group>
   );
 }
 
 export function StandScene3D({
   dimensions,
+  floorSettings,
   elements,
   gridSize,
   onSelectElement,
@@ -85,6 +130,7 @@ export function StandScene3D({
   showGrid,
 }: StandScene3DProps) {
   const maxSide = Math.max(dimensions.width, dimensions.depth);
+  const { topY: floorTopY } = getStandPlatformMetrics(floorSettings);
   const visibleElements = useMemo(
     () => elements.filter((element) => element.category !== "texte"),
     [elements]
@@ -92,7 +138,7 @@ export function StandScene3D({
   const selectedIds = useMemo(() => new Set(selectedElementIds), [selectedElementIds]);
   const cameraPosition: [number, number, number] = [
     dimensions.width / 2 + maxSide * 0.45,
-    maxSide * 0.62,
+    maxSide * 0.62 + floorTopY * 0.6,
     dimensions.depth + maxSide * 0.72,
   ];
 
@@ -114,7 +160,7 @@ export function StandScene3D({
         panSpeed={1.15}
         rotateSpeed={0.82}
         screenSpacePanning
-        target={[dimensions.width / 2, 0.55, dimensions.depth / 2]}
+        target={[dimensions.width / 2, floorTopY + 0.55, dimensions.depth / 2]}
         zoomSpeed={0.95}
       />
 
@@ -123,19 +169,21 @@ export function StandScene3D({
       <directionalLight castShadow intensity={2.4} position={[dimensions.width * 0.15, 7.5, -dimensions.depth * 0.35]} shadow-mapSize-height={2048} shadow-mapSize-width={2048} shadow-camera-bottom={-10} shadow-camera-far={24} shadow-camera-left={-10} shadow-camera-right={10} shadow-camera-top={10} />
       <spotLight angle={0.52} castShadow intensity={48} penumbra={0.55} position={[dimensions.width / 2, 8.5, dimensions.depth / 2]} />
 
-      <StandShell depth={dimensions.depth} width={dimensions.width} />
-      <FloorGrid depth={dimensions.depth} gridSize={gridSize} showGrid={showGrid} width={dimensions.width} />
+      <StandShell depth={dimensions.depth} floorSettings={floorSettings} width={dimensions.width} />
+      <FloorGrid depth={dimensions.depth} gridSize={gridSize} showGrid={showGrid} topY={floorTopY} width={dimensions.width} />
 
-      {visibleElements.map((element) => (
-        <StandFurnitureModel
-          element={element}
-          key={element.id}
-          onSelect={onSelectElement}
-          selected={selectedIds.has(element.id)}
-        />
-      ))}
+      <group position={[0, floorTopY, 0]}>
+        {visibleElements.map((element) => (
+          <StandFurnitureModel
+            element={element}
+            key={element.id}
+            onSelect={onSelectElement}
+            selected={selectedIds.has(element.id)}
+          />
+        ))}
+      </group>
 
-      <ContactShadows blur={2.5} color="#94a3b8" frames={1} opacity={0.28} position={[dimensions.width / 2, 0.001, dimensions.depth / 2]} scale={Math.max(dimensions.width, dimensions.depth) * 1.35} />
+      <ContactShadows blur={2.5} color="#94a3b8" frames={1} opacity={0.28} position={[dimensions.width / 2, floorTopY + 0.001, dimensions.depth / 2]} scale={Math.max(dimensions.width, dimensions.depth) * 1.35} />
     </>
   );
 }

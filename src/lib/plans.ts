@@ -1,6 +1,7 @@
 import "server-only";
 import { WithId, Document } from "mongodb";
 import { getMongoDb } from "@/lib/mongodb";
+import { DEFAULT_STAND_FLOOR_SETTINGS, normalizeStandFloorSettings } from "@/lib/stand-floor";
 import { StandPlan } from "@/lib/types";
 
 const COLLECTION_NAME = "stand_plans";
@@ -12,8 +13,12 @@ function normalizePlan(document: StandPlanDocument): StandPlan {
     planId: document.planId,
     planName: document.planName,
     dimensions: document.dimensions,
+    floorSettings: normalizeStandFloorSettings(document.floorSettings),
     elements: document.elements,
-    history: document.history ?? [],
+    history: (document.history ?? []).map((entry) => ({
+      ...entry,
+      floorSettings: normalizeStandFloorSettings(entry.floorSettings),
+    })),
     historyIndex: typeof document.historyIndex === "number" ? document.historyIndex : -1,
     createdAt: document.createdAt,
     updatedAt: document.updatedAt,
@@ -41,6 +46,7 @@ export async function savePlan(plan: StandPlan): Promise<StandPlan> {
         planId: plan.planId,
         planName: plan.planName,
         dimensions: plan.dimensions,
+        floorSettings: plan.floorSettings ?? DEFAULT_STAND_FLOOR_SETTINGS,
         elements: plan.elements,
         history: plan.history,
         historyIndex: plan.historyIndex,

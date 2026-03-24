@@ -1,12 +1,14 @@
 import { create } from "zustand";
 import { nanoid } from "nanoid";
 import { measureTextContent } from "./text-measure";
+import { DEFAULT_STAND_FLOOR_SETTINGS, normalizeStandFloorSettings } from "./stand-floor";
 import {
   StandElement,
   StandDimensions,
   GridSize,
   FurnitureCatalogItem,
   HistoryEntry,
+  StandFloorSettings,
   StandPlan,
 } from "./types";
 
@@ -14,6 +16,8 @@ interface StandStore {
   // Stand dimensions
   dimensions: StandDimensions;
   setDimensions: (d: StandDimensions) => void;
+  floorSettings: StandFloorSettings;
+  updateFloorSettings: (updates: Partial<StandFloorSettings>) => void;
 
   // Elements
   elements: StandElement[];
@@ -68,6 +72,17 @@ export const useStandStore = create<StandStore>((set, get) => ({
     if (get().isReadOnly) return;
     get().pushHistory();
     set({ dimensions: d });
+  },
+  floorSettings: { ...DEFAULT_STAND_FLOOR_SETTINGS },
+  updateFloorSettings: (updates) => {
+    if (get().isReadOnly) return;
+    get().pushHistory();
+    set((state) => ({
+      floorSettings: normalizeStandFloorSettings({
+        ...state.floorSettings,
+        ...updates,
+      }),
+    }));
   },
 
   elements: [],
@@ -318,10 +333,11 @@ export const useStandStore = create<StandStore>((set, get) => ({
   historyIndex: -1,
   pushHistory: () => {
     if (get().isReadOnly) return;
-    const { elements, dimensions, history, historyIndex } = get();
+    const { elements, dimensions, floorSettings, history, historyIndex } = get();
     const entry: HistoryEntry = {
       elements: JSON.parse(JSON.stringify(elements)),
       dimensions: { ...dimensions },
+      floorSettings: { ...floorSettings },
     };
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(entry);
@@ -338,6 +354,7 @@ export const useStandStore = create<StandStore>((set, get) => ({
     set({
       elements: JSON.parse(JSON.stringify(entry.elements)),
       dimensions: { ...entry.dimensions },
+      floorSettings: normalizeStandFloorSettings(entry.floorSettings),
       historyIndex: historyIndex - 1,
       selectedElementId: null,
       selectedElementIds: [],
@@ -352,6 +369,7 @@ export const useStandStore = create<StandStore>((set, get) => ({
     set({
       elements: JSON.parse(JSON.stringify(entry.elements)),
       dimensions: { ...entry.dimensions },
+      floorSettings: normalizeStandFloorSettings(entry.floorSettings),
       historyIndex: historyIndex + 1,
       selectedElementId: null,
       selectedElementIds: [],
@@ -373,8 +391,13 @@ export const useStandStore = create<StandStore>((set, get) => ({
       planId: plan.planId,
       planName: plan.planName,
       dimensions: { ...plan.dimensions },
+      floorSettings: normalizeStandFloorSettings(plan.floorSettings),
       elements: JSON.parse(JSON.stringify(plan.elements)),
-      history: JSON.parse(JSON.stringify(plan.history ?? [])),
+      history: (plan.history ?? []).map((entry) => ({
+        elements: JSON.parse(JSON.stringify(entry.elements)),
+        dimensions: { ...entry.dimensions },
+        floorSettings: normalizeStandFloorSettings(entry.floorSettings),
+      })),
       historyIndex:
         typeof plan.historyIndex === "number"
           ? plan.historyIndex
@@ -385,12 +408,13 @@ export const useStandStore = create<StandStore>((set, get) => ({
   },
 
   serializePlan: () => {
-    const { planId, planName, dimensions, elements, history, historyIndex } = get();
+    const { planId, planName, dimensions, floorSettings, elements, history, historyIndex } = get();
 
     return {
       planId,
       planName,
       dimensions: { ...dimensions },
+      floorSettings: { ...floorSettings },
       elements: JSON.parse(JSON.stringify(elements)),
       history: JSON.parse(JSON.stringify(history)),
       historyIndex,

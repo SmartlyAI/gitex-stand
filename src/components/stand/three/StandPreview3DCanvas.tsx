@@ -3,11 +3,13 @@
 import { Suspense, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Maximize2 } from "lucide-react";
+import { getStandFloorFinishLabel } from "@/lib/stand-floor";
 import { useStandStore } from "@/lib/store";
 import { StandScene3D } from "./StandScene3D";
 
 export function StandPreview3DCanvas() {
   const dimensions = useStandStore((state) => state.dimensions);
+  const floorSettings = useStandStore((state) => state.floorSettings);
   const elements = useStandStore((state) => state.elements);
   const gridSize = useStandStore((state) => state.gridSize);
   const selectElement = useStandStore((state) => state.selectElement);
@@ -30,6 +32,7 @@ export function StandPreview3DCanvas() {
           <Suspense fallback={null}>
             <StandScene3D
               dimensions={dimensions}
+              floorSettings={floorSettings}
               elements={elements}
               gridSize={gridSize}
               onSelectElement={(event, elementId) => {
@@ -63,7 +66,7 @@ export function StandPreview3DCanvas() {
         </div>
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-white/90 to-transparent px-6 pb-4 pt-10 text-center text-[11px] font-medium text-[#64748b]">
-          Stand : {dimensions.width}m × {dimensions.depth}m — Surface : {dimensions.width * dimensions.depth}m² — Éléments : {elements.length}
+          Stand : {dimensions.width}m × {dimensions.depth}m — Surface : {dimensions.width * dimensions.depth}m² — Sol : {getStandFloorFinishLabel(floorSettings.finish)}{floorSettings.elevation > 0 ? ` (+${Math.round(floorSettings.elevation * 100)} cm)` : ""} — Éléments : {elements.length}
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import React, { useRef, useCallback, useState, useEffect, useMemo } from "react";
 import { useStandStore } from "@/lib/store";
+import { getStandFloorCanvasStyle, getStandFloorFinishLabel } from "@/lib/stand-floor";
 import { CanvasElement } from "@/components/stand/CanvasElement";
 import { ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 
@@ -18,6 +19,7 @@ interface SelectionRect {
 export function Canvas() {
   const {
     dimensions,
+    floorSettings,
     elements,
     selectedElementIds,
     selectElement,
@@ -39,6 +41,10 @@ export function Canvas() {
 
   const canvasW = dimensions.width * METERS_TO_PX;
   const canvasH = dimensions.depth * METERS_TO_PX;
+  const floorCanvasStyle = useMemo(
+    () => getStandFloorCanvasStyle(floorSettings),
+    [floorSettings]
+  );
   const orderedElements = useMemo(
     () => [...elements].sort((left, right) => Number(left.category === "texte") - Number(right.category === "texte")),
     [elements]
@@ -366,8 +372,9 @@ export function Canvas() {
           {/* Canvas */}
           <div
             ref={canvasRef}
-            className="relative bg-white shadow-sm"
+            className="relative shadow-sm"
             style={{
+              ...floorCanvasStyle,
               width: scaledW,
               height: scaledH,
               cursor: "default",
@@ -434,7 +441,7 @@ export function Canvas() {
       </div>
 
       <div className="mt-3 text-[11px] text-[#94a3b8] select-none font-medium tracking-wide">
-        Stand : {dimensions.width}m × {dimensions.depth}m — Surface : {dimensions.width * dimensions.depth}m²
+        Stand : {dimensions.width}m × {dimensions.depth}m — Surface : {dimensions.width * dimensions.depth}m² — Sol : {getStandFloorFinishLabel(floorSettings.finish)}{floorSettings.elevation > 0 ? ` — Surélévation : ${Math.round(floorSettings.elevation * 100)} cm` : ""}
       </div>
     </div>
   );

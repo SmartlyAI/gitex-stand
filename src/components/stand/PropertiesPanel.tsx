@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useStandStore } from "@/lib/store";
+import { STAND_FLOOR_FINISHES } from "@/lib/stand-floor";
 import { measureTextContent } from "@/lib/text-measure";
 import { TvScreenMode } from "@/lib/types";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,8 @@ export function PropertiesPanel() {
   const {
     dimensions,
     setDimensions,
+    floorSettings,
+    updateFloorSettings,
     elements,
     selectedElementId,
     selectedElementIds,
@@ -45,6 +48,9 @@ export function PropertiesPanel() {
     selectedElement?.category === "texte"
       ? String(selectedElement.fontSize ?? 18)
       : "";
+  const selectedFloorFinish =
+    STAND_FLOOR_FINISHES.find((option) => option.value === floorSettings.finish) ??
+    STAND_FLOOR_FINISHES[0];
   const isPartitionTv = selectedElement?.catalogId === "ecran_pied";
   const selectedTvScreenMode: TvScreenMode =
     selectedElement?.tvScreenMode ?? "single";
@@ -153,6 +159,67 @@ export function PropertiesPanel() {
               {p.label}
             </button>
           ))}
+        </div>
+
+        <div className="mt-4 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-3">
+          <h4 className="text-[11px] font-semibold uppercase tracking-wide text-[#475569]">
+            Sol du stand
+          </h4>
+
+          <div className="mt-3 space-y-3">
+            <div>
+              <Label className="text-[11px] text-[#64748b]">Finition</Label>
+              <div className="mt-1 flex gap-2">
+                {STAND_FLOOR_FINISHES.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`h-7 flex-1 rounded-lg px-2 text-[10px] font-medium transition-colors ${
+                      floorSettings.finish === option.value
+                        ? "bg-[#1e293b] text-white"
+                        : "border border-[#e2e8f0] bg-white text-[#475569] hover:bg-[#f1f5f9]"
+                    }`}
+                    onClick={() => updateFloorSettings({ finish: option.value })}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-[11px] text-[#64748b]">{selectedFloorFinish.accentLabel}</Label>
+              <div className="mt-1 flex items-center gap-2">
+                <input
+                  type="color"
+                  value={floorSettings.color}
+                  onChange={(e) => updateFloorSettings({ color: e.target.value })}
+                  className="h-7 w-7 rounded-md border border-[#e2e8f0] p-0.5"
+                />
+                <Input
+                  value={floorSettings.color}
+                  onChange={(e) => updateFloorSettings({ color: e.target.value })}
+                  className="h-7 flex-1 border-[#e2e8f0] bg-white font-mono text-[12px]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <Label className="text-[11px] text-[#64748b]">Surélévation</Label>
+                <span className="text-[10px] font-semibold text-[#1e293b]">
+                  {Math.round(floorSettings.elevation * 100)} cm
+                </span>
+              </div>
+              <Slider
+                value={floorSettings.elevation}
+                min={0}
+                max={0.3}
+                step={0.01}
+                onValueChange={(v: number) => updateFloorSettings({ elevation: v })}
+              />
+            </div>
+          </div>
         </div>
       </div>
 

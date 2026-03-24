@@ -1,6 +1,7 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
+import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { Maximize2, ZoomIn, ZoomOut } from "lucide-react";
 import { getStandFloorFinishLabel } from "@/lib/stand-floor";
@@ -24,11 +25,58 @@ export function StandPreview3DCanvas({ isReadOnly, onZoomIn, onZoomOut, onZoomRe
   const showGrid = useStandStore((state) => state.showGrid);
   const [sceneKey, setSceneKey] = useState(0);
 
+  const cameraRef = useRef<THREE.PerspectiveCamera>(null);
+  const controlsRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+
   // Listener pour les événements de zoom lancés depuis StandEditor
   useEffect(() => {
-    // Si la caméra a besoin d'être manipulée depuis l'extérieur, on pourrait l'ajouter ici
-    // via useThree. Pour l'instant, c'est géré par l'OrbitControls.
-  }, []);
+    const handleZoomIn = () => {
+      if (controlsRef.current && cameraRef.current) {
+        // Zoomer en s'approchant de la target
+        const target = controlsRef.current.target;
+        const position = cameraRef.current.position;
+        const direction = target.clone().sub(position);
+        position.add(direction.multiplyScalar(0.2)); // Avancer de 20%
+        controlsRef.current.update();
+      }
+    };
+
+    const handleZoomOut = () => {
+      if (controlsRef.current && cameraRef.current) {
+        // Dézoomer en s'éloignant de la target
+        const target = controlsRef.current.target;
+        const position = cameraRef.current.position;
+        const direction = position.clone().sub(target);
+        position.add(direction.multiplyScalar(0.25)); // Reculer de 25% (compensé)
+        controlsRef.current.update();
+      }
+    };
+
+    const handleZoomReset = () => {
+      // Revenir à la position initiale
+      if (controlsRef.current && cameraRef.current) {
+        const maxSide = Math.max(dimensions.width, dimensions.depth);
+        const topY = floorSettings.elevation; // approximate
+        cameraRef.current.position.set(
+          dimensions.width / 2 + maxSide * 0.45,
+          maxSide * 0.62 + topY * 0.6,
+          -maxSide * 0.72
+        );
+        controlsRef.current.target.set(dimensions.width / 2, topY + 0.55, dimensions.depth / 2);
+        controlsRef.current.update();
+      }
+    };
+
+    window.addEventListener("zoom-3d-in", handleZoomIn);
+    window.addEventListener("zoom-3d-out", handleZoomOut);
+    window.addEventListener("zoom-3d-reset", handleZoomReset);
+
+    return () => {
+      window.removeEventListener("zoom-3d-in", handleZoomIn);
+      window.removeEventListener("zoom-3d-out", handleZoomOut);
+      window.removeEventListener("zoom-3d-reset", handleZoomReset);
+    };
+  }, [dimensions, floorSettings]);
 
   return (
     <div className="flex-1 w-full h-full min-h-0 relative overflow-hidden bg-[radial-gradient(circle_at_top,_#ffffff,_#eef2ff_45%,_#e2e8f0_100%)]">
@@ -59,6 +107,8 @@ export function StandPreview3DCanvas({ isReadOnly, onZoomIn, onZoomOut, onZoomRe
               }}
               selectedElementIds={selectedElementIds}
               showGrid={showGrid}
+              cameraRef={cameraRef}
+              controlsRef={controlsRef}
             />
           </Suspense>
         </Canvas>

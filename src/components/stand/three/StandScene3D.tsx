@@ -16,6 +16,8 @@ interface StandScene3DProps {
   selectedElementIds: string[];
   showGrid: boolean;
   onSelectElement: (event: ThreeEvent<MouseEvent>, elementId: string) => void;
+  cameraRef?: React.Ref<THREE.PerspectiveCamera>;
+  controlsRef?: React.Ref<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 function FloorGrid({ depth, gridSize, showGrid, topY, width }: { depth: number; gridSize: number; showGrid: boolean; topY: number; width: number }) {
@@ -162,6 +164,8 @@ export function StandScene3D({
   onSelectElement,
   selectedElementIds,
   showGrid,
+  cameraRef,
+  controlsRef,
 }: StandScene3DProps) {
   const maxSide = Math.max(dimensions.width, dimensions.depth);
   const { topY: floorTopY } = getStandPlatformMetrics(floorSettings);
@@ -181,8 +185,9 @@ export function StandScene3D({
       <color args={["#eef2ff"]} attach="background" />
       <fog args={["#eef2ff", maxSide * 4, maxSide * 10]} attach="fog" />
 
-      <PerspectiveCamera makeDefault fov={52} position={cameraPosition} />
+      <PerspectiveCamera makeDefault fov={52} position={cameraPosition} ref={cameraRef} />
       <OrbitControls
+        ref={controlsRef}
         autoRotate={false}
         enableDamping
         enablePan

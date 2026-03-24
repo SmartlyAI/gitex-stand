@@ -37,6 +37,7 @@ export function PropertiesPanel() {
     removeElement,
     removeSelectedElements,
     duplicateElement,
+    isReadOnly,
   } = useStandStore();
 
   const selectedCount = selectedElementIds.length;
@@ -55,6 +56,9 @@ export function PropertiesPanel() {
   const isPartitionTv = selectedElement?.catalogId === "ecran_pied";
   const selectedTvScreenMode: TvScreenMode =
     selectedElement?.tvScreenMode ?? "single";
+  const readOnlyContentClass = isReadOnly
+    ? "[&_button]:pointer-events-none [&_button]:opacity-70 [&_input]:pointer-events-none [&_input]:opacity-80 [&_textarea]:pointer-events-none [&_textarea]:opacity-80"
+    : "";
 
   // Tab state: "stand" (Global) or "element" (Local)
   const [activeTab, setActiveTab] = useState<"stand" | "element">("stand");
@@ -156,7 +160,7 @@ export function PropertiesPanel() {
 
       {/* Stand Content (Global) */}
       {activeTab === "stand" && (
-        <div className="flex flex-col">
+        <div className={`flex flex-col ${readOnlyContentClass}`}>
           {/* Stand Dimensions */}
           <div className="px-4 pt-4 pb-3 border-b border-[#e5e7eb]">
             <h3 className="font-semibold text-[13px] text-[#1e293b] mb-3">Dimensions du stand</h3>
@@ -298,7 +302,7 @@ export function PropertiesPanel() {
 
       {/* Selected Element Properties */}
       {activeTab === "element" && selectedCount > 1 && (
-        <div className="px-4 pt-4 pb-4 flex-1">
+        <div className={`px-4 pt-4 pb-4 flex-1 ${readOnlyContentClass}`}>
           <h3 className="font-semibold text-[13px] text-[#1e293b]">
             {selectedCount} éléments sélectionnés
           </h3>
@@ -319,7 +323,7 @@ export function PropertiesPanel() {
       )}
 
       {activeTab === "element" && selectedCount === 1 && selectedElement ? (
-        <div className="px-4 pt-4 pb-4 flex-1">
+        <div className={`px-4 pt-4 pb-4 flex-1 ${readOnlyContentClass}`}>
           <h3 className="font-semibold text-[13px] text-[#1e293b]">{selectedElement.name}</h3>
           {catalogLabel && (
             <p className="text-[11px] text-[#94a3b8] mb-3">

@@ -26,7 +26,7 @@ export function StandEditor({
   readOnly = false,
 }: StandEditorProps) {
   const [shareOpen, setShareOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<StandViewMode>(readOnly ? "3d" : "2d");
+  const [viewMode, setViewMode] = useState<StandViewMode>("3d");
   const didHydrateRef = useRef(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -121,7 +121,7 @@ export function StandEditor({
             />
           )}
         </main>
-        {!isReadOnly && <PropertiesPanel />}
+        {(!isReadOnly || viewMode === "2d") && <PropertiesPanel />}
       </div>
       <ShareModal open={shareOpen} onOpenChange={setShareOpen} />
     </div>

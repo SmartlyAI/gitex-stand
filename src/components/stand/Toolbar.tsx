@@ -115,15 +115,40 @@ export function Toolbar({ onShareOpen, viewMode, onViewModeChange }: ToolbarProp
 
       <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
 
-      {/* Undo / Redo */}
-      <Button variant="ghost" size="icon" className="h-7 w-7 text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" disabled={isReadOnly || !canUndo} onClick={undo} title="Annuler">
-        <Undo2 className="h-3.5 w-3.5" />
-      </Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7 text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" disabled={isReadOnly || !canRedo} onClick={redo} title="Rétablir">
-        <Redo2 className="h-3.5 w-3.5" />
-      </Button>
+      <div className="flex items-center rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-0.5">
+        {viewModes.map((mode) => (
+          <button
+            key={mode}
+            type="button"
+            className={`h-6 min-w-9 rounded-md px-2 text-[10px] font-semibold uppercase tracking-wide transition-colors ${
+              viewMode === mode
+                ? "bg-[#1e293b] text-white shadow-sm"
+                : "text-[#64748b] hover:bg-white hover:text-[#334155]"
+            }`}
+            onClick={() => onViewModeChange(mode)}
+          >
+            {mode}
+          </button>
+        ))}
+      </div>
 
-      <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
+      {!isReadOnly && (
+        <>
+          <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
+
+          {/* Undo / Redo */}
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" disabled={!canUndo} onClick={undo} title="Annuler">
+            <Undo2 className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" disabled={!canRedo} onClick={redo} title="Rétablir">
+            <Redo2 className="h-3.5 w-3.5" />
+          </Button>
+        </>
+      )}
+
+      {!isReadOnly && (
+        <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
+      )}
 
       {/* Grid toggle */}
       <Button
@@ -175,13 +200,17 @@ export function Toolbar({ onShareOpen, viewMode, onViewModeChange }: ToolbarProp
         ))}
       </div>
 
-      <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
+      {!isReadOnly && (
+        <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
+      )}
 
       {/* Text tool */}
-      <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[11px] font-medium text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" onClick={handleAddText} title="Ajouter un texte">
-        <Type className="h-3.5 w-3.5" />
-        Texte
-      </Button>
+      {!isReadOnly && (
+        <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[11px] font-medium text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" onClick={handleAddText} title="Ajouter un texte">
+          <Type className="h-3.5 w-3.5" />
+          Texte
+        </Button>
+      )}
 
       <div className="flex-1" />
 
@@ -190,24 +219,29 @@ export function Toolbar({ onShareOpen, viewMode, onViewModeChange }: ToolbarProp
         <ImageIcon className="h-3.5 w-3.5" />
       </Button>
 
-      <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
+      {!isReadOnly && (
+        <Separator orientation="vertical" className="h-5 bg-[#e2e8f0]" />
+      )}
 
       {/* Save */}
-      <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[11px] font-medium text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" onClick={handleSavePlan} title="Sauvegarder" disabled={isReadOnly || isSaving}>
-        <Save className="h-3.5 w-3.5" />
-        {isSaving ? "Sauvegarde..." : "Sauvegarder"}
-      </Button>
+      {!isReadOnly && (
+        <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[11px] font-medium text-[#475569] hover:text-[#1e293b] hover:bg-[#f1f5f9]" onClick={handleSavePlan} title="Sauvegarder" disabled={isSaving}>
+          <Save className="h-3.5 w-3.5" />
+          {isSaving ? "Sauvegarde..." : "Sauvegarder"}
+        </Button>
+      )}
 
       {/* Share */}
-      <Button
-        size="sm"
-        className="h-7 gap-1.5 text-[11px] font-semibold bg-[#10b981] hover:bg-[#059669] text-white rounded-lg shadow-sm ml-1"
-        onClick={onShareOpen}
-        disabled={isReadOnly}
-      >
-        <Share2 className="h-3.5 w-3.5" />
-        Partager
-      </Button>
+      {!isReadOnly && (
+        <Button
+          size="sm"
+          className="h-7 gap-1.5 text-[11px] font-medium bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
+          onClick={onShareOpen}
+        >
+          <Share2 className="h-3.5 w-3.5" />
+          Partager
+        </Button>
+      )}
     </div>
   );
 }

@@ -101,8 +101,7 @@ function DemoTable({ color, depth, height, width }: { color: string; depth: numb
   const plinthHeight = 0.06;
   const bodyHeight = height - topThickness;
   const nicheWidth = Math.max(width * 0.34, 0.34);
-  const dividerX = -width / 2 + nicheWidth + panelThickness / 2;
-  const cabinetFaceWidth = Math.max(width - nicheWidth - panelThickness * 2, width * 0.42);
+  const cabinetFaceWidth = Math.max(width - nicheWidth - panelThickness, width * 0.48);
 
   return (
     <>
@@ -123,15 +122,11 @@ function DemoTable({ color, depth, height, width }: { color: string; depth: numb
         <meshStandardMaterial color="#ffffff" roughness={0.84} />
       </mesh>
 
-      <mesh castShadow position={[dividerX, bodyHeight / 2, 0]} receiveShadow>
-        <boxGeometry args={[panelThickness, bodyHeight, depth * 0.92]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.84} />
-      </mesh>
-      <mesh castShadow position={[width / 2 - cabinetFaceWidth / 2 - panelThickness * 0.5, bodyHeight / 2, depth / 2 - panelThickness / 2]} receiveShadow>
+      <mesh castShadow position={[width / 2 - cabinetFaceWidth / 2 - panelThickness / 2, bodyHeight / 2, depth / 2 - panelThickness / 2]} receiveShadow>
         <boxGeometry args={[cabinetFaceWidth, bodyHeight - plinthHeight, panelThickness]} />
         <meshStandardMaterial color={tone(color, 0.04)} roughness={0.5} />
       </mesh>
-      <mesh castShadow position={[width / 2 - cabinetFaceWidth * 0.18 - panelThickness * 0.5, bodyHeight / 2, depth / 2 + 0.004]} receiveShadow>
+      <mesh castShadow position={[width / 2 - cabinetFaceWidth * 0.2 - panelThickness / 2, bodyHeight / 2, depth / 2 + 0.004]} receiveShadow>
         <boxGeometry args={[0.012, bodyHeight * 0.2, 0.014]} />
         <meshStandardMaterial color="#cbd5e1" metalness={0.24} roughness={0.36} />
       </mesh>

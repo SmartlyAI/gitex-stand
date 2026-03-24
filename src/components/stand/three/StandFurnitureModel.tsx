@@ -98,10 +98,15 @@ function Stool({ depth, height, width }: { depth: number; height: number; width:
 function DemoTable({ color, depth, height, width }: { color: string; depth: number; height: number; width: number }) {
   const topThickness = 0.06;
   const panelThickness = 0.055;
-  const plinthHeight = 0.06;
   const bodyHeight = height - topThickness;
-  const nicheWidth = Math.max(width * 0.34, 0.34);
-  const cabinetFaceWidth = Math.max(width - nicheWidth - panelThickness, width * 0.48);
+  const storageWidth = Math.max(width * 0.4, 0.24);
+  const storageHeight = bodyHeight;
+  const storageDepth = Math.max(depth - panelThickness * 0.8, 0.3);
+  const storageX = width / 2 - storageWidth / 2;
+  const storageY = storageHeight / 2;
+  const doorWidth = Math.max(storageWidth - 0.05, 0.18);
+  const doorHeight = Math.max(storageHeight - 0.08, 0.24);
+  const lockX = storageX + storageWidth * 0.28;
 
   return (
     <>
@@ -109,45 +114,55 @@ function DemoTable({ color, depth, height, width }: { color: string; depth: numb
         <meshStandardMaterial color="#f8fafc" metalness={0.03} roughness={0.38} />
       </RoundedBox>
 
-      <mesh castShadow position={[width / 2 - panelThickness / 2, bodyHeight / 2, 0]} receiveShadow>
-        <boxGeometry args={[panelThickness, bodyHeight, depth]} />
-        <meshStandardMaterial color={tone(color, 0.08)} roughness={0.56} />
-      </mesh>
-      <mesh castShadow position={[-width / 2 + panelThickness / 2, bodyHeight / 2, 0]} receiveShadow>
-        <boxGeometry args={[panelThickness, bodyHeight, depth]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.86} />
-      </mesh>
-      <mesh castShadow position={[0, bodyHeight / 2, -depth / 2 + panelThickness / 2]} receiveShadow>
-        <boxGeometry args={[width, bodyHeight, panelThickness]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.84} />
-      </mesh>
-
-      <mesh castShadow position={[width / 2 - cabinetFaceWidth / 2 - panelThickness / 2, bodyHeight / 2, depth / 2 - panelThickness / 2]} receiveShadow>
-        <boxGeometry args={[cabinetFaceWidth, bodyHeight - plinthHeight, panelThickness]} />
+      <mesh castShadow position={[storageX, storageY, 0]} receiveShadow>
+        <boxGeometry args={[storageWidth, storageHeight, storageDepth]} />
         <meshStandardMaterial color={tone(color, 0.04)} roughness={0.5} />
       </mesh>
-      <mesh castShadow position={[width / 2 - cabinetFaceWidth * 0.2 - panelThickness / 2, bodyHeight / 2, depth / 2 + 0.004]} receiveShadow>
+
+      <mesh castShadow position={[storageX, storageY, depth / 2 - panelThickness / 2]} receiveShadow>
+        <boxGeometry args={[doorWidth, doorHeight, panelThickness]} />
+        <meshStandardMaterial color={tone(color, 0.1)} roughness={0.42} />
+      </mesh>
+      <mesh castShadow position={[lockX, storageY, depth / 2 + 0.004]} receiveShadow>
         <boxGeometry args={[0.012, bodyHeight * 0.2, 0.014]} />
         <meshStandardMaterial color="#cbd5e1" metalness={0.24} roughness={0.36} />
       </mesh>
 
-      <mesh castShadow position={[0, plinthHeight / 2, depth / 2 - 0.015]} receiveShadow>
-        <boxGeometry args={[width, plinthHeight, 0.03]} />
-        <meshStandardMaterial color="#d1d5db" roughness={0.8} />
-      </mesh>
-      <mesh castShadow position={[width / 2 - 0.015, plinthHeight / 2, 0]} receiveShadow>
-        <boxGeometry args={[0.03, plinthHeight, depth]} />
+      <mesh castShadow position={[storageX, 0.03, 0]} receiveShadow>
+        <boxGeometry args={[storageWidth, 0.06, storageDepth]} />
         <meshStandardMaterial color="#d1d5db" roughness={0.8} />
       </mesh>
     </>
   );
 }
 
-function PartitionTv({ color, depth, height, width }: { color: string; depth: number; height: number; width: number }) {
+function getScreenSizeFromInches(inches: number) {
+  const safeInches = Math.max(24, Math.min(inches, 120));
+  const diagonalMeters = safeInches * 0.0254;
+  const aspectWidth = 16;
+  const aspectHeight = 9;
+  const ratio = Math.sqrt(aspectWidth ** 2 + aspectHeight ** 2);
+  const rawWidth = (diagonalMeters * aspectWidth) / ratio;
+  const rawHeight = (diagonalMeters * aspectHeight) / ratio;
+
+  return {
+    height: rawHeight,
+    width: rawWidth,
+  };
+}
+
+function PartitionTv({ color, depth, element, height, width }: { color: string; depth: number; element: StandElement; height: number; width: number }) {
   const partitionWidth = Math.max(width * 0.96, 0.56);
   const partitionDepth = Math.max(depth * 0.28, 0.08);
-  const screenWidth = partitionWidth * 0.76;
-  const screenHeight = height * 0.2;
+  const isDoubleSided = element.tvScreenMode === "double";
+  const screenOneSize = getScreenSizeFromInches(element.tvScreen1Inches ?? 55);
+  const screenTwoSize = getScreenSizeFromInches(
+    element.tvScreen2Inches ?? element.tvScreen1Inches ?? 55
+  );
+  const screenOneCenterY = element.tvScreen1CenterY ?? 1.45;
+  const screenTwoCenterY = element.tvScreen2CenterY ?? element.tvScreen1CenterY ?? 1.45;
+  const frontScreenZ = partitionDepth / 2 + 0.06;
+  const backScreenZ = -partitionDepth / 2 - 0.06;
 
   return (
     <>
@@ -168,17 +183,33 @@ function PartitionTv({ color, depth, height, width }: { color: string; depth: nu
         <meshStandardMaterial color={tone(color, 0.26)} emissive={tone(color, 0.1)} emissiveIntensity={0.08} side={DoubleSide} />
       </mesh>
 
-      <mesh castShadow position={[0, height * 0.62, partitionDepth / 2 + 0.03]} receiveShadow>
+      <mesh castShadow position={[0, screenOneCenterY, partitionDepth / 2 + 0.03]} receiveShadow>
         <boxGeometry args={[0.08, 0.12, 0.02]} />
         <meshStandardMaterial color="#94a3b8" metalness={0.26} roughness={0.38} />
       </mesh>
-      <RoundedBox args={[screenWidth, screenHeight, 0.05]} castShadow position={[0, height * 0.62, partitionDepth / 2 + 0.06]} radius={0.018} receiveShadow smoothness={4}>
+      <RoundedBox args={[screenOneSize.width, screenOneSize.height, 0.05]} castShadow position={[0, screenOneCenterY, frontScreenZ]} radius={0.018} receiveShadow smoothness={4}>
         <meshStandardMaterial color="#0f172a" metalness={0.14} roughness={0.28} />
       </RoundedBox>
-      <mesh position={[0, height * 0.62, partitionDepth / 2 + 0.088]}>
-        <planeGeometry args={[screenWidth * 0.9, screenHeight * 0.82]} />
+      <mesh position={[0, screenOneCenterY, frontScreenZ + 0.028]}>
+        <planeGeometry args={[screenOneSize.width * 0.9, screenOneSize.height * 0.82]} />
         <meshStandardMaterial color="#111827" emissive="#1d4ed8" emissiveIntensity={0.08} side={DoubleSide} />
       </mesh>
+
+      {isDoubleSided && (
+        <>
+          <mesh castShadow position={[0, screenTwoCenterY, -partitionDepth / 2 - 0.03]} receiveShadow>
+            <boxGeometry args={[0.08, 0.12, 0.02]} />
+            <meshStandardMaterial color="#94a3b8" metalness={0.26} roughness={0.38} />
+          </mesh>
+          <RoundedBox args={[screenTwoSize.width, screenTwoSize.height, 0.05]} castShadow position={[0, screenTwoCenterY, backScreenZ]} radius={0.018} receiveShadow smoothness={4}>
+            <meshStandardMaterial color="#0f172a" metalness={0.14} roughness={0.28} />
+          </RoundedBox>
+          <mesh position={[0, screenTwoCenterY, backScreenZ - 0.028]} rotation={[0, Math.PI, 0]}>
+            <planeGeometry args={[screenTwoSize.width * 0.9, screenTwoSize.height * 0.82]} />
+            <meshStandardMaterial color="#111827" emissive="#2563eb" emissiveIntensity={0.08} side={DoubleSide} />
+          </mesh>
+        </>
+      )}
 
       <mesh castShadow position={[0, 0.025, depth * 0.22]} receiveShadow>
         <boxGeometry args={[partitionWidth * 0.58, 0.03, 0.08]} />
@@ -330,7 +361,7 @@ function FurnitureBody({ color, depth, element, height, width }: { color: string
         </>
       );
     case "ecran_pied":
-      return <PartitionTv color={color} depth={depth} height={height} width={width} />;
+      return <PartitionTv color={color} depth={depth} element={element} height={height} width={width} />;
     case "totem":
       return (
         <>

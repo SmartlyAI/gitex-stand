@@ -85,6 +85,10 @@ export function StandScene3D({
   showGrid,
 }: StandScene3DProps) {
   const maxSide = Math.max(dimensions.width, dimensions.depth);
+  const visibleElements = useMemo(
+    () => elements.filter((element) => element.category !== "texte"),
+    [elements]
+  );
   const selectedIds = useMemo(() => new Set(selectedElementIds), [selectedElementIds]);
   const cameraPosition: [number, number, number] = [
     dimensions.width / 2 + maxSide * 0.45,
@@ -122,7 +126,7 @@ export function StandScene3D({
       <StandShell depth={dimensions.depth} width={dimensions.width} />
       <FloorGrid depth={dimensions.depth} gridSize={gridSize} showGrid={showGrid} width={dimensions.width} />
 
-      {elements.map((element) => (
+      {visibleElements.map((element) => (
         <StandFurnitureModel
           element={element}
           key={element.id}

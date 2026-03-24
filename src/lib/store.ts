@@ -129,6 +129,16 @@ export const useStandStore = create<StandStore>((set, get) => ({
     if (get().isReadOnly) return;
     get().pushHistory();
     const { dimensions } = get();
+    const tvDefaults =
+      item.id === "ecran_pied"
+        ? {
+            tvScreenMode: "single" as const,
+            tvScreen1Inches: 55,
+            tvScreen2Inches: 55,
+            tvScreen1CenterY: 1.45,
+            tvScreen2CenterY: 1.45,
+          }
+        : {};
     const el: StandElement = {
       id: nanoid(8),
       catalogId: item.id,
@@ -141,6 +151,7 @@ export const useStandStore = create<StandStore>((set, get) => ({
       rotation: 0,
       color: item.color,
       locked: false,
+      ...tvDefaults,
     };
     set((s) => ({
       elements: [...s.elements, el],

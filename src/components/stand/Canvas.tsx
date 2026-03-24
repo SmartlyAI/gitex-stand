@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useCallback, useState, useEffect } from "react";
+import React, { useRef, useCallback, useState, useEffect, useMemo } from "react";
 import { useStandStore } from "@/lib/store";
 import { CanvasElement } from "@/components/stand/CanvasElement";
 import { ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
@@ -39,6 +39,10 @@ export function Canvas() {
 
   const canvasW = dimensions.width * METERS_TO_PX;
   const canvasH = dimensions.depth * METERS_TO_PX;
+  const orderedElements = useMemo(
+    () => [...elements].sort((left, right) => Number(left.category === "texte") - Number(right.category === "texte")),
+    [elements]
+  );
 
   useEffect(() => {
     const fit = () => {
@@ -401,7 +405,7 @@ export function Canvas() {
               />
             )}
 
-            {elements.map((el) => (
+            {orderedElements.map((el) => (
               <CanvasElement
                 key={el.id}
                 element={el}

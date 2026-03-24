@@ -16,6 +16,8 @@ export interface FurnitureCatalogItem {
   icon?: string;
 }
 
+export type TvScreenMode = "single" | "double";
+
 export interface StandElement {
   id: string;
   catalogId: string;
@@ -32,6 +34,11 @@ export interface StandElement {
   fontBold?: boolean;
   fontItalic?: boolean;
   text?: string; // for text elements
+  tvScreenMode?: TvScreenMode;
+  tvScreen1Inches?: number;
+  tvScreen2Inches?: number;
+  tvScreen1CenterY?: number;
+  tvScreen2CenterY?: number;
 }
 
 export interface StandDimensions {

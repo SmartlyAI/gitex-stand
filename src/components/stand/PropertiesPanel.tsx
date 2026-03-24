@@ -3,6 +3,7 @@
 import React from "react";
 import { useStandStore } from "@/lib/store";
 import { measureTextContent } from "@/lib/text-measure";
+import { TvScreenMode } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -44,6 +45,23 @@ export function PropertiesPanel() {
     selectedElement?.category === "texte"
       ? String(selectedElement.fontSize ?? 18)
       : "";
+  const isPartitionTv = selectedElement?.catalogId === "ecran_pied";
+  const selectedTvScreenMode: TvScreenMode =
+    selectedElement?.tvScreenMode ?? "single";
+
+  const updatePartitionTv = (updates: {
+    tvScreenMode?: TvScreenMode;
+    tvScreen1Inches?: number;
+    tvScreen2Inches?: number;
+    tvScreen1CenterY?: number;
+    tvScreen2CenterY?: number;
+  }) => {
+    if (!selectedElement || selectedElement.catalogId !== "ecran_pied") {
+      return;
+    }
+
+    updateElement(selectedElement.id, updates);
+  };
 
   const updateTextElementLayout = (
     text: string,
@@ -275,6 +293,129 @@ export function PropertiesPanel() {
                     onValueChange={(v: number) => updateElement(selectedElement.id, { height: v })}
                   />
                 </div>
+              </div>
+            )}
+
+            {isPartitionTv && (
+              <div className="space-y-3 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-3">
+                <div>
+                  <Label className="text-[11px] text-[#64748b]">Écrans</Label>
+                  <div className="mt-1 flex gap-2">
+                    {([
+                      { label: "1 côté", value: "single" },
+                      { label: "2 côtés", value: "double" },
+                    ] as Array<{ label: string; value: TvScreenMode }>).map((option) => (
+                      <button
+                        key={option.value}
+                        className={`h-7 flex-1 rounded-lg text-[11px] font-medium transition-colors ${
+                          selectedTvScreenMode === option.value
+                            ? "bg-[#1e293b] text-white"
+                            : "border border-[#e2e8f0] bg-white text-[#475569] hover:bg-[#f1f5f9]"
+                        }`}
+                        onClick={() =>
+                          updatePartitionTv({
+                            tvScreenMode: option.value,
+                            tvScreen2Inches:
+                              option.value === "double"
+                                ? selectedElement.tvScreen2Inches ?? selectedElement.tvScreen1Inches ?? 55
+                                : selectedElement.tvScreen2Inches,
+                          })
+                        }
+                        type="button"
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-[11px] text-[#64748b]">
+                    {selectedTvScreenMode === "single" ? "Dimension écran" : "Dimension écran 1"}
+                  </Label>
+                  <div className="mt-1 flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={24}
+                      max={120}
+                      step={1}
+                      value={String(selectedElement.tvScreen1Inches ?? 55)}
+                      onChange={(e) => {
+                        const parsedValue = Number(e.target.value);
+
+                        if (!Number.isFinite(parsedValue) || parsedValue < 24 || parsedValue > 120) {
+                          return;
+                        }
+
+                        updatePartitionTv({ tvScreen1Inches: parsedValue });
+                      }}
+                      className="h-7 w-24 text-[12px] border-[#e2e8f0] bg-white"
+                    />
+                    <span className="text-[11px] text-[#64748b]">pouces</span>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-[11px] text-[#64748b]">
+                      {selectedTvScreenMode === "single" ? "Hauteur écran" : "Hauteur écran 1"}
+                    </Label>
+                    <span className="text-[10px] font-semibold text-[#1e293b]">
+                      {(selectedElement.tvScreen1CenterY ?? 1.45).toFixed(2)}m
+                    </span>
+                  </div>
+                  <Slider
+                    value={selectedElement.tvScreen1CenterY ?? 1.45}
+                    min={0.4}
+                    max={3.2}
+                    step={0.05}
+                    onValueChange={(v: number) => updatePartitionTv({ tvScreen1CenterY: v })}
+                  />
+                </div>
+
+                {selectedTvScreenMode === "double" && (
+                  <>
+                    <div>
+                      <Label className="text-[11px] text-[#64748b]">Dimension écran 2</Label>
+                      <div className="mt-1 flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min={24}
+                          max={120}
+                          step={1}
+                          value={String(selectedElement.tvScreen2Inches ?? selectedElement.tvScreen1Inches ?? 55)}
+                          onChange={(e) => {
+                            const parsedValue = Number(e.target.value);
+
+                            if (!Number.isFinite(parsedValue) || parsedValue < 24 || parsedValue > 120) {
+                              return;
+                            }
+
+                            updatePartitionTv({ tvScreen2Inches: parsedValue });
+                          }}
+                          className="h-7 w-24 text-[12px] border-[#e2e8f0] bg-white"
+                        />
+                        <span className="text-[11px] text-[#64748b]">pouces</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <Label className="text-[11px] text-[#64748b]">Hauteur écran 2</Label>
+                        <span className="text-[10px] font-semibold text-[#1e293b]">
+                          {(selectedElement.tvScreen2CenterY ?? selectedElement.tvScreen1CenterY ?? 1.45).toFixed(2)}m
+                        </span>
+                      </div>
+                      <Slider
+                        value={selectedElement.tvScreen2CenterY ?? selectedElement.tvScreen1CenterY ?? 1.45}
+                        min={0.4}
+                        max={3.2}
+                        step={0.05}
+                        onValueChange={(v: number) => updatePartitionTv({ tvScreen2CenterY: v })}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             )}
 

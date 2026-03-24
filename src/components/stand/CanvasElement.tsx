@@ -238,9 +238,14 @@ export function CanvasElement({
     window.addEventListener("mouseup", handleMouseUp);
   };
 
-  const containerClassName = `absolute select-none overflow-visible ${
-    isDragging ? "z-50 opacity-90" : "z-10"
-  } ${
+  const layerClassName = isText
+    ? isDragging
+      ? "z-[90] opacity-95"
+      : "z-[80]"
+    : isDragging
+      ? "z-50 opacity-90"
+      : "z-10";
+  const containerClassName = `absolute select-none overflow-visible ${layerClassName} ${
     element.locked || isReadOnly
       ? "cursor-not-allowed opacity-80"
       : isEditingText
